@@ -15,7 +15,7 @@ B) AWS real con servicios productivos (DynamoDB, Cognito, S3 en cuenta real)
 C) AWS con cuenta de sandbox/dev dedicada para el demo
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: B
 
 ---
 
@@ -28,7 +28,7 @@ C) AWS App Runner
 D) AWS Lambda (serverless)
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: X. Monolito de backend + AgentCore Runtime para el deploy de los agentes. 
 
 ---
 
@@ -41,7 +41,7 @@ C) AWS Amplify Hosting
 D) AWS EC2 / App Runner
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: B
 
 ---
 
@@ -56,7 +56,8 @@ C) Amazon Bedrock Knowledge Base (RAG gestionado por Bedrock)
 D) pgvector en PostgreSQL (RDS o local)
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: X. Como son una serie de brochures con un formato fijo. Presentacion, Sobre este diploma, como impulsamos tu carrera, por que estudiar este diploma, objetivo del diploma,
+a quien esta dirigido, requisitos, herramientas, malla curricular, propuesta de capacitacion, certificacion, docentes. Estoy pensando usar algun LLM para estructurar esos PDFs. No se si un RAG sea lo mas adecuado.
 
 ---
 
@@ -69,7 +70,7 @@ C) No todavía — el sistema debe estar preparado para cuando los suba
 D) Para el demo usaré PDFs de ejemplo o placeholder
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: A
 
 ---
 
@@ -83,7 +84,7 @@ B) Simular con DynamoDB como store de conversación (más simple, evita dependen
 C) Usar memoria en proceso (in-memory dict en FastAPI) — suficiente para demo de una sesión
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: A con Strands SDK
 
 ---
 
@@ -96,7 +97,7 @@ A) Sandbox / testing (credenciales de prueba, no se procesa dinero real)
 B) Producción (credenciales reales de cuenta DMC)
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: A
 
 ---
 
@@ -108,7 +109,7 @@ B) Sí, tengo access token de producción listo
 C) No todavía — construir el código y dejar placeholder para configurar después
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: C
 
 ---
 
@@ -122,7 +123,7 @@ B) Se embebe como script en una página de prueba / staging de dmc.pe
 C) Se embebe directamente en producción de dmc.pe
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: A. Vamos a tener que crear una pagina de prueba. 
 
 ---
 
@@ -136,7 +137,7 @@ B) Estándar — unit tests para lógica de negocio principal + tests de integra
 C) Completo — cobertura amplia incluyendo edge cases, guardrails, RAG
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: X. el curso esta enfocado en AI, podemos omitir pruebas frontend. Para backend, unit tests para lógica de negocio principal, Evals, guardrails y RAG.
 
 ---
 
@@ -150,7 +151,7 @@ B) Script de setup que crea el usuario programáticamente via AWS CLI
 C) Usar Cognito Hosted UI (login page de AWS, sin formulario custom)
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: A
 
 ---
 
@@ -163,7 +164,7 @@ A) Sí — aplicar todas las reglas SECURITY como constraints bloqueantes (recom
 B) No — omitir reglas SECURITY (adecuado para PoC, prototipos, proyectos experimentales de curso)
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: A
 
 ---
 
@@ -175,4 +176,4 @@ B) Parcial — aplicar PBT solo para funciones puras y transformaciones de datos
 C) No — omitir reglas PBT (adecuado para demos, CRUDs simples, capas de integración)
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]: A
