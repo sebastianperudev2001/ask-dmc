@@ -26,3 +26,19 @@
 **Context**: Requirements Analysis — Step 6. Awaiting user answers before generating requirements.md.
 
 ---
+
+## Requirements Analysis — Clarification Answers Received
+**Timestamp**: 2026-04-23T00:00:00Z
+**User Input (CQ1)**: "A. Pero, recuerda que deberia ser un websocket para facilitar el streaming de las respuestas."
+**User Input (CQ2)**: "Crear una DB vectorial con los brochures estructurados. Para ello, deberiamos crear un pipeline de ingestion que procese los PDFs con Claude y genere embeddings de las secciones relevantes y agregamos metadata estructurada para facilitar la búsqueda."
+**AI Response**: Clarifications resolved. Architecture: FastAPI thin layer (App Runner) + Strands Agent en AgentCore Runtime + WebSocket streaming + Vector DB con pipeline PDF→Claude→embeddings+metadata.
+**Context**: Requirements Analysis — Ambiguities resolved.
+
+---
+
+## Requirements Analysis — Document Generated
+**Timestamp**: 2026-04-23T00:00:00Z
+**AI Response**: Generated aidlc-docs/inception/requirements/requirements.md. Extension configuration: Security Baseline ENABLED (full, blocking), PBT ENABLED (full enforcement, Hypothesis). Updated aidlc-state.md.
+**Context**: Requirements Analysis — Step 7 complete. Awaiting user approval to proceed.
+
+---

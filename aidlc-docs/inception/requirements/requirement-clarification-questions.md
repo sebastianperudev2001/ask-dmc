@@ -50,7 +50,7 @@ B) Arquitectura B — Strands Agent corre dentro de FastAPI; AgentCore Memory se
 C) Otra arquitectura (describir abajo)
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]: A
+[Answer]: A. Pero, recuerda que deberia ser un websocket para facilitar el streaming de las respuestas.
 
 ---
 
@@ -85,4 +85,4 @@ B) Opción B — Bedrock Knowledge Base (RAG gestionado, sube PDFs a S3 y AWS ha
 C) Opción C — Brochures pre-procesados como contexto estático en el system prompt (sin infra adicional)
 X) Other (please describe after [Answer]: tag below)
 
-[Answer]:
+[Answer]:  Crear una DB vectorial con los brochures estructurados. Para ello, deberiamos crear un pipeline de ingestion que procese los PDFs con Claude y genere embeddings de las secciones relevantes y agregamos metadata estructurada para facilitar la búsqueda.

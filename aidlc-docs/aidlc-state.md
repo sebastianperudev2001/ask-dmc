@@ -4,7 +4,7 @@
 - **Project Name**: DMC Sales Agent
 - **Project Type**: Greenfield
 - **Start Date**: 2026-04-23T00:00:00Z
-- **Current Stage**: INCEPTION - Requirements Analysis
+- **Current Stage**: INCEPTION - Requirements Analysis (completado, pendiente aprobación)
 
 ## Workspace State
 - **Existing Code**: No
@@ -17,15 +17,18 @@
 - **Structure patterns**: See code-generation.md Critical Rules
 
 ## Extension Configuration
-- **Security Baseline**: Pending opt-in (see requirements-questions.md)
-- **Property-Based Testing**: Pending opt-in (see requirements-questions.md)
+
+| Extension | Enabled | Decided At |
+|---|---|---|
+| Security Baseline (SECURITY-01 a SECURITY-15) | Yes | Requirements Analysis |
+| Property-Based Testing (PBT-01 a PBT-10) | Yes — Full enforcement | Requirements Analysis |
 
 ## Stage Progress
 
 ### INCEPTION PHASE
 - [x] Workspace Detection — COMPLETED (2026-04-23)
-- [ ] Requirements Analysis — IN PROGRESS
-- [ ] User Stories — PENDING
+- [x] Requirements Analysis — COMPLETED (2026-04-23), pendiente aprobación usuario
+- [ ] User Stories — PENDING (assessment requerido)
 - [ ] Workflow Planning — PENDING
 - [ ] Application Design — PENDING
 - [ ] Units Generation — PENDING
