@@ -1,8 +1,8 @@
 # Requirements Document — DMC Sales Agent
 
-**Versión**: 1.0
-**Fecha**: 2026-04-23
-**Origen**: PRD v1.1 + sesión de clarificación de requerimientos
+**Versión**: 1.1
+**Fecha**: 2026-04-28
+**Origen**: PRD v1.1 + sesión de clarificación de requerimientos + amendment round 1
 **Estado**: Aprobado pendiente
 
 ---
@@ -46,19 +46,40 @@ El equipo comercial de DMC Institute atiende consultas repetitivas via WhatsApp 
 
 | Capa | Tecnología | Decisión |
 |---|---|---|
-| **LLM** | Claude (`claude-sonnet-4-6`) | API de Anthropic |
+| **LLM** | Amazon Bedrock (Claude `claude-sonnet-4-6` via Bedrock) | Acceso via **capa de infraestructura agnóstica** (ver §4.3) |
 | **Agente** | Strands SDK | Desplegado en AWS AgentCore Runtime (runtime independiente) |
 | **Memoria conversacional** | AWS AgentCore Memory | Via Strands SDK; persiste hilo entre sesiones |
-| **Backend** | FastAPI (Python) — monolito thin layer | AWS App Runner (contenedor) |
+| **Backend** | FastAPI (Python) — monolito thin layer | AWS Lambda + API Gateway WebSocket |
 | **Frontend** | Next.js (React) | Vercel |
 | **Auth** | AWS Cognito User Pool | Admin creado manualmente en consola; Amplify SDK en frontend |
-| **Persistencia de leads** | Amazon DynamoDB | Tabla `dmc-leads`; boto3 desde FastAPI |
-| **Knowledge Base** | Vector DB (ver §4.2) | Pipeline de ingestion PDF → Claude → embeddings + metadata |
+| **Persistencia de leads** | Amazon DynamoDB | Tabla `dmc-leads`; boto3 desde Lambda |
+| **Persistencia de conversaciones** | Amazon DynamoDB | Tabla `dmc-conversations`; separada de leads |
+| **Knowledge Base** | Vector DB (ver §4.2) | Pipeline de ingestion PDF → Bedrock Claude → embeddings + metadata |
 | **Pagos** | Mercado Pago Checkout API | Modo **sandbox** — access token configurado via env var (placeholder) |
-| **Storage PDFs** | Amazon S3 | Bucket `dmc-knowledge-base` |
+| **Storage PDFs** | Amazon S3 | Bucket `dmc-knowledge-base`; presigned URLs generadas por el agente |
+| **Notificaciones** | Amazon SES | Email al equipo comercial cuando lead solicita contacto humano |
 | **Sesión browser** | `localStorage` (`window.storage`) | Nombre + email del visitante para re-identificación |
 
-### 4.2 Knowledge Base — Pipeline de Ingestion
+### 4.2 Capa de Infraestructura LLM (Agnóstica)
+
+El acceso al modelo de lenguaje se abstrae detrás de una interfaz de repositorio/infraestructura de modo que el proveedor puede cambiarse sin modificar la lógica de negocio del agente.
+
+```
+[Strands Agent / pipeline de ingestion]
+        |
+        | usa interfaz LLMProvider
+        v
+[LLMProvider — capa de infraestructura]
+    |-- BedrockLLMProvider (implementación activa)
+    |      └── boto3 → Amazon Bedrock → Claude claude-sonnet-4-6
+    |-- (futuro: AnthropicLLMProvider, OpenAILLMProvider, etc.)
+```
+
+**Regla**: ningún módulo fuera de la capa de infraestructura importa directamente `boto3.client("bedrock-runtime")` ni la API de Anthropic. Toda invocación al LLM pasa por la interfaz `LLMProvider`.
+
+---
+
+### 4.3 Knowledge Base — Pipeline de Ingestion
 
 **Decisión**: No RAG tradicional (embeddings de chunks crudos de PDF). En su lugar:
 
@@ -88,34 +109,37 @@ Chunks relevantes → contexto del agente
 
 **Vector DB**: tecnología específica a definir en NFR Design (candidatos: Amazon OpenSearch Serverless, pgvector en RDS, o Bedrock Knowledge Base con metadata filtering).
 
-### 4.3 Arquitectura del Sistema
+### 4.4 Arquitectura del Sistema
 
 ```
 [Visitante — Demo Page]
         |
-        | (1) abre chat, envía mensaje
+        | (1) abre chat, WebSocket $connect
         v
-[Next.js Widget — Vercel]
+[API Gateway — WebSocket API]
         |
-        | (2) WebSocket (streaming de respuestas)
+        | (2) routeKey: $default → Lambda handler
         v
-[FastAPI — AWS App Runner]  <-- thin layer
+[FastAPI en AWS Lambda]  <-- thin layer
     |-- (3) Valida/enruta mensaje
     |-- (4) Invoca Strands Agent en AgentCore Runtime
-    |-- (6) DynamoDB: persiste lead al cierre
-    |-- (7) Mercado Pago API: genera link de pago (sandbox)
+    |-- (7) DynamoDB: persiste lead al cierre
+    |-- (8) Mercado Pago API: genera link de pago (sandbox)
+    |-- (9) SES: email al equipo si lead solicita humano
         |
         | (4) invoke
         v
 [Strands Agent — AgentCore Runtime]
     |-- Tool: search_courses() → consulta Vector DB
     |-- Tool: qualify_lead() → calcula score y motivación
-    |-- Tool: generate_payment_link() → llama FastAPI → Mercado Pago
+    |-- Tool: generate_payment_link() → llama Lambda → Mercado Pago
+    |-- Tool: get_brochure_url(course) → presigned URL de S3
+    |-- LLMProvider (Bedrock) → Claude claude-sonnet-4-6
     |-- AgentCore Memory → historial de conversación
         |
         | (5) respuesta en streaming
         v
-[FastAPI → WebSocket → Next.js Widget → Usuario]
+[Lambda → API Gateway WebSocket → Next.js Widget → Usuario]
 
 [Equipo DMC — Backoffice]
         |
@@ -123,9 +147,9 @@ Chunks relevantes → contexto del agente
         v
 [Next.js /admin — Vercel]
         |
-        | (2) GET /api/leads
+        | (2) GET /api/leads (REST)
         v
-[FastAPI → DynamoDB → lista/detalle leads]
+[Lambda → DynamoDB → lista/detalle leads]
 ```
 
 ---
@@ -186,8 +210,11 @@ Cuando el usuario muestra intención de compra, el agente genera un link de pago
 
 #### RF-09: Escalación a humano
 Si el usuario pide hablar con una persona:
-- El agente provee: WhatsApp `+51 912 322 976`
-- Cierra la sesión conversacional
+- El agente responde que alguien del equipo se pondrá en contacto con ellos
+- El agente NO provee número de teléfono ni WhatsApp directamente
+- Se registra el flag `escalated_to_human: true` en el registro del lead en DynamoDB
+- Lambda envía un email de notificación al equipo comercial via Amazon SES con: nombre, email y resumen del lead
+- La sesión conversacional se cierra
 
 #### RF-10: Persistencia del lead en DynamoDB
 Al finalizar la conversación (FIN o ESCALACIÓN), el agente persiste el lead con la estructura definida en §6.
@@ -199,10 +226,16 @@ Las respuestas del agente se transmiten al widget via WebSocket para habilitar s
 
 #### RF-12: Anti-alucinación
 El agente NO inventa precios, fechas de inicio, descuentos ni condiciones especiales. Si no tiene la información en la knowledge base, responde:
-> *"No tengo esa información disponible. Te recomiendo contactar directamente al equipo en +51 912 322 976."*
+> *"No tengo esa información disponible. Si tienes más preguntas, alguien de nuestro equipo puede ayudarte."*
 
 #### RF-13: Sin promesas no fundamentadas
 El agente no ofrece becas, descuentos ni condiciones especiales que no estén en los brochures.
+
+#### RF-17: Sin menciones de competidores
+El agente NO menciona ninguna otra empresa, instituto educativo ni plataforma de cursos. NO realiza comparaciones con competidores bajo ninguna circunstancia.
+
+#### RF-18: Scope limitado a ventas
+El agente solo ejecuta tareas de recomendación y cierre de ventas. Si el usuario solicita algo fuera de ese scope (ej. ejercicios de código, soporte técnico, tutoría), el agente responde educadamente que su rol es ayudar a encontrar el programa ideal, y ofrece continuar con esa orientación.
 
 ### 5.3 Backoffice Portal (Superficie B)
 
@@ -228,12 +261,14 @@ Clic en fila → detalle.
 
 ---
 
-## 6. Estructura del Lead (DynamoDB)
+## 6. Estructura de Datos (DynamoDB)
+
+### 6.1 Tabla `dmc-leads`
 
 ```json
 {
   "id": "uuid",
-  "created_at": "ISO-8601",
+  "created_at": 1714089600000,
   "name": "string",
   "email": "string",
   "profile_summary": "string",
@@ -245,16 +280,32 @@ Clic en fila → detalle.
   "score": "hot | warm | cold",
   "score_justification": "string",
   "conversation_summary": "string",
-  "full_transcript": [
-    { "role": "agent | user", "content": "string", "timestamp": "ISO-8601" }
-  ]
+  "escalated_to_human": "boolean"
 }
 ```
 
-**Schema DynamoDB:**
+**Schema DynamoDB — `dmc-leads`:**
 - PK: `id` (UUID, String)
-- SK: `created_at` (String ISO-8601)
+- SK: `created_at` (Number — timestamp en milisegundos)
 - GSI: `email-index` sobre `email`
+
+### 6.2 Tabla `dmc-conversations`
+
+Almacena los mensajes individuales de cada conversación, separados del lead.
+
+```json
+{
+  "lead_id": "uuid",
+  "timestamp": 1714089600000,
+  "role": "agent | user",
+  "content": "string"
+}
+```
+
+**Schema DynamoDB — `dmc-conversations`:**
+- PK: `lead_id` (UUID, String)
+- SK: `timestamp` (Number — timestamp en milisegundos)
+- Permite recuperar la transcripción completa de un lead con `Query` por `lead_id`
 
 ---
 
@@ -365,14 +416,16 @@ propuesta_capacitacion | certificacion | docentes
 | M5 | Recomendación personalizada según perfil + motivación |
 | M6 | Generación de link de pago Mercado Pago (sandbox) |
 | M7 | Pipeline de ingestion PDF → Claude → embeddings → vector DB |
-| M8 | Strands Agent en AgentCore Runtime con tools: search_courses, qualify_lead, generate_payment_link |
+| M8 | Strands Agent en AgentCore Runtime con tools: search_courses, qualify_lead, generate_payment_link; acceso al LLM via capa LLMProvider (Bedrock) |
 | M9 | AgentCore Memory para historial de conversación |
 | M10 | Streaming de respuestas via WebSocket |
 | M11 | Persistencia del lead en DynamoDB al finalizar |
 | M12 | Backoffice Next.js: lista y detalle de leads |
 | M13 | Auth con AWS Cognito (admin@dmc.pe creado manualmente) |
 | M14 | Guardrail anti-alucinación (solo responde con info de brochures) |
-| M15 | Guardrail de escalación a humano |
+| M15 | Guardrail de escalación a humano (flag en DB + email SES al equipo) |
+| M16 | Guardrail: el agente no menciona competidores ni realiza comparaciones |
+| M17 | Guardrail: scope limitado a recomendación y cierre de ventas |
 
 ### Should Have
 | # | Feature |
@@ -380,6 +433,7 @@ propuesta_capacitacion | certificacion | docentes
 | S1 | Resumen ejecutivo generado por el agente al cerrar conversación |
 | S2 | Filtros por score y motivación en el backoffice |
 | S3 | Badge de motivación con cita textual del usuario |
+| S4 | Tool `get_brochure_url(course)`: el agente envía presigned URL de S3 del brochure del programa recomendado |
 
 ### Could Have
 | # | Feature |
@@ -417,24 +471,32 @@ propuesta_capacitacion | certificacion | docentes
 
 ### 12.1 AWS Services (cuenta real)
 - Amazon DynamoDB (tabla `dmc-leads`)
+- Amazon DynamoDB (tabla `dmc-conversations`)
 - AWS Cognito User Pool
 - Amazon S3 (bucket `dmc-knowledge-base`)
 - AWS AgentCore Runtime
-- AWS App Runner (FastAPI)
+- AWS Lambda + API Gateway WebSocket (FastAPI via Mangum adapter)
+- Amazon SES (notificaciones al equipo comercial)
+- Amazon Bedrock (Claude `claude-sonnet-4-6`)
 - Vector DB (TBD en NFR Design)
 
 ### 12.2 Variables de Entorno / Secrets
 ```env
-# Anthropic
-ANTHROPIC_API_KEY=<secret>
-
 # AWS
 AWS_REGION=us-east-1
-DYNAMODB_TABLE_NAME=dmc-leads
+DYNAMODB_TABLE_LEADS=dmc-leads
+DYNAMODB_TABLE_CONVERSATIONS=dmc-conversations
 S3_BUCKET_NAME=dmc-knowledge-base
 COGNITO_USER_POOL_ID=<valor>
 COGNITO_CLIENT_ID=<valor>
 AGENTCORE_RUNTIME_ID=<valor>
+
+# Bedrock
+BEDROCK_MODEL_ID=anthropic.claude-sonnet-4-6-20251001-v1:0
+
+# SES
+SES_SALES_EMAIL=ventas@dmc.pe
+SES_FROM_EMAIL=noreply@dmc.pe
 
 # Mercado Pago (sandbox — placeholder)
 MERCADO_PAGO_ACCESS_TOKEN=<placeholder>
@@ -454,8 +516,8 @@ ALLOWED_ORIGINS=http://localhost:3000,https://<vercel-domain>
 | Decisión | Candidatos | Criterio de selección |
 |---|---|---|
 | Vector DB | Amazon OpenSearch Serverless, pgvector (RDS), Bedrock KB | Costo, facilidad de setup en AWS, soporte de metadata filtering |
-| FastAPI deployment compute | AWS App Runner (recomendado) | Simplicidad de despliegue de contenedor en AWS |
 | Ingestion pipeline trigger | Script manual, Lambda S3 trigger | Frecuencia de actualización de brochures |
+| Lambda packaging | Docker image vs ZIP + layer | Tamaño de dependencias (Strands SDK, Mangum) |
 
 ---
 
