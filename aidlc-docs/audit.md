@@ -97,3 +97,79 @@ Guardrails adicionales:
 **Context**: User Stories — Part 2 COMPLETED. Awaiting user approval.
 
 ---
+
+## User Stories — Approved
+**Timestamp**: 2026-04-28T00:00:00Z
+**User Input**: "Approved, let's continue with Workflow Planning"
+**AI Response**: User Stories COMPLETED and APPROVED. 16 issues creados en GitHub Project #3 (Ask DMC). Procediendo a Workflow Planning.
+**Context**: User Stories — COMPLETED and APPROVED.
+
+---
+
+## Workflow Planning — Plan Presentado
+**Timestamp**: 2026-04-28T00:00:00Z
+**AI Response**: Análisis completo. Risk: HIGH. 5 unidades identificadas. Todas las etapas CONSTRUCTION se ejecutan. Application Design y Units Generation se ejecutan. execution-plan.md generado. Pendiente aprobación del usuario.
+**Context**: Workflow Planning — Awaiting user approval.
+
+---
+
+## Workflow Planning — Aprobado
+**Timestamp**: 2026-04-28T00:00:00Z
+**User Input**: "Aprobar"
+**AI Response**: Workflow Planning COMPLETADO y APROBADO. Procediendo a Application Design.
+**Context**: Workflow Planning — COMPLETED and APPROVED.
+
+---
+
+## Application Design — Plan Presentado
+**Timestamp**: 2026-04-28T00:00:00Z
+**AI Response**: Plan de Application Design creado con 5 capas de componentes identificadas y 4 preguntas de diseño. Awaiting user answers.
+**Context**: Application Design — Part 1. Awaiting answers before generating artifacts.
+
+---
+
+## Application Design — Respuestas y Artefactos Generados
+**Timestamp**: 2026-04-28T00:00:00Z
+**User Input**: "B, C, B" (Q2=AgentCore Memory + current_state en dmc-conversations, Q3=Turborepo monorepo, Q4=Protocol)
+**AI Response**: 5 artefactos generados: components.md (17 componentes en 5 capas), component-methods.md, services.md (6 servicios), component-dependency.md (4 data flow diagrams), application-design.md (consolidado). Pendiente aprobación.
+**Context**: Application Design — COMPLETED. Awaiting user approval.
+
+---
+
+## Application Design — folder-structure.md Agregado
+**Timestamp**: 2026-04-28T00:00:00Z
+**User Input**: "En esta etapa tenemos que definir bien la architectura del backend? domain, repo, service, etc. ademas, de la estructura de las carpetas de front?"
+**AI Response**: Generado folder-structure.md con: backend Python (domain/ports/infrastructure/services/handlers), agent (tools/ports/infrastructure), ingestion pipeline, apps/widget, apps/backoffice, packages/ui (Turborepo). Tabla de reglas de dependencia por capa incluida.
+**Context**: Application Design — artefacto adicional generado. Pendiente aprobación final.
+
+---
+
+## Application Design — Aprobado
+**Timestamp**: 2026-04-28T00:00:00Z
+**User Input**: "Todo okay, sigamos"
+**AI Response**: Application Design COMPLETADO y APROBADO. 6 artefactos: components.md, component-methods.md, services.md, component-dependency.md, application-design.md, folder-structure.md. Procediendo a Units Generation.
+**Context**: Application Design — COMPLETED and APPROVED.
+
+---
+
+## Units Generation — Plan Listo para Aprobación
+**Timestamp**: 2026-04-28T00:00:00Z
+**AI Response**: Sin preguntas pendientes — contexto completo de Application Design. Plan creado con 5 unidades y 3 artefactos a generar. Solicitando aprobación antes de generación.
+**Context**: Units Generation — Part 1. Awaiting approval.
+
+---
+
+## Units Generation — Aprobado
+**Timestamp**: 2026-04-28T00:00:00Z
+**User Input**: "si"
+**AI Response**: Plan aprobado. Iniciando Part 2 — generación de los 3 artefactos.
+**Context**: Units Generation — Part 2 Generation iniciada.
+
+---
+
+## Units Generation — Artefactos Generados
+**Timestamp**: 2026-04-28T00:00:00Z
+**AI Response**: 3 artefactos generados. unit-of-work.md (5 unidades con criterios entrada/salida), unit-of-work-dependency.md (matriz + riesgos), unit-of-work-story-map.md (16/16 stories asignadas). Pendiente aprobación.
+**Context**: Units Generation — COMPLETED. Awaiting user approval.
+
+---
