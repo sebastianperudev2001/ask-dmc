@@ -1,0 +1,12 @@
+Notes on Business Rules:
+- I do not believe that using a LLM is the right choice to extract the data 
+from the PDFs, the content is predictable, so we need a deterministic script
+to get the data. 
+- We should probably save somewhere those erors reports (not in a a DB for now)
+- For the keyboards generation, we should use a cheap LLM like haiku or probably gemma 4 from google
+
+Notes on Business Logic Model:
+- Let's add an ENV
+- When it's local, let's use the @knowledge_source directory instead of S3
+- when it's local let's use ollama, let's use an open source model for 
+generating the embeddings

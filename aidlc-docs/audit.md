@@ -173,3 +173,50 @@ Guardrails adicionales:
 **Context**: Units Generation — COMPLETED. Awaiting user approval.
 
 ---
+
+## Units Generation — Aprobado / Construction Phase Iniciada
+**Timestamp**: 2026-04-28T00:00:00Z
+**User Input**: "implementalo"
+**AI Response**: Units Generation APROBADO. Iniciando CONSTRUCTION PHASE — unit-1: ingestion-pipeline.
+**Context**: CONSTRUCTION PHASE — unit-1 iniciada.
+
+---
+
+## unit-1: ingestion-pipeline — Functional Design Completado
+**Timestamp**: 2026-04-28T00:00:00Z
+**AI Response**: Generados: domain-entities.md (SectionType, BrochureSection, EmbeddedChunk, IngestionReport), business-rules.md (BR-01 a BR-09), business-logic-model.md (algoritmos de pipeline, extracción y embeddings). Sin preguntas — diseño completamente derivado de requirements. Pendiente aprobación.
+**Context**: unit-1 Functional Design — COMPLETED. Awaiting approval.
+
+---
+
+## unit-1: ingestion-pipeline — Functional Design Aprobado
+**Timestamp**: 2026-04-29T00:00:00Z
+**User Input**: "Yes"
+**AI Response**: Functional Design COMPLETADO y APROBADO (v2 con parsing determinístico + ENV support). Procediendo a NFR Requirements para unit-1.
+**Context**: unit-1 Functional Design — COMPLETED and APPROVED.
+
+---
+
+## Divergence Decision — DIV-01
+**Timestamp**: 2026-04-29T00:00:00Z
+**User Input**: "B"
+**AI Response**: Logged DIV-01 in aidlc-state.md. Inception docs kept as historical record; construction artifacts take precedence. No inception files modified.
+**Context**: Divergence tracking — PDF extraction approach changed from LLM-based to deterministic parser.
+
+---
+
+## Session Resumption
+**Timestamp**: 2026-04-29T00:00:00Z
+**User Input**: "Let's continue with AI SDLC"
+**AI Response**: Session resumed. Loaded functional design artifacts for unit-1: ingestion-pipeline. Presenting welcome back prompt and functional design approval request.
+**Context**: Session Continuity — Resuming CONSTRUCTION PHASE, unit-1: ingestion-pipeline.
+
+---
+
+## unit-1: ingestion-pipeline — Functional Design Amendment Round 1
+**Timestamp**: 2026-04-29T00:00:00Z
+**User Input**: "Notes on Business Rules:\n- I do not believe that using a LLM is the right choice to extract the data from the PDFs, the content is predictable, so we need a deterministic script to get the data.\n- We should probably save somewhere those errors reports (not in a DB for now)\n- For the keywords generation, we should use a cheap LLM like haiku or probably gemma 4 from google\n\nNotes on Business Logic Model:\n- Let's add an ENV\n- When it's local, let's use the @knowledge_source directory instead of S3\n- when it's local let's use ollama, let's use an open source model for generating the embeddings"
+**AI Response**: Applying amendments: (1) Replace LLM-based PDF extraction with deterministic pdfplumber parser, (2) Add error report persistence to file (not DB), (3) Keyword extraction via cheap LLM (Haiku/Gemma 4), (4) Add ENV enum with LOCAL/PRODUCTION routing — LOCAL uses knowledge_source/ + Ollama embeddings + local file reports; PRODUCTION uses S3 + Bedrock embeddings. Updating domain-entities.md, business-rules.md, business-logic-model.md.
+**Context**: unit-1 Functional Design — Amendment applied. Awaiting user approval.
+
+---
