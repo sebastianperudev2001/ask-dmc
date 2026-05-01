@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """PBT — EmbeddedChunk and IngestionReport invariants (BR-03, BR-08)."""
 from unittest.mock import MagicMock
 

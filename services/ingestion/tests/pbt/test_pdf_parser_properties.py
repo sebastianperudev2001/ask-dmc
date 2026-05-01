@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """PBT — PDFParser invariants (BR-01, BR-02, BR-04)."""
 from unittest.mock import MagicMock
 

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Shared Hypothesis generators for domain types."""
 from hypothesis import strategies as st
 
