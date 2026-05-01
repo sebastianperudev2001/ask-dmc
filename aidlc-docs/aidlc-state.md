@@ -44,7 +44,12 @@
 - [x] Units Generation — COMPLETED and APPROVED (2026-04-28)
 
 ### CONSTRUCTION PHASE
-- [ ] Per-Unit Loop — PENDING
+- [x] Per-Unit Loop — unit-1: ingestion-pipeline COMPLETED (2026-04-30)
+  - [x] Functional Design — COMPLETED and APPROVED
+  - [x] NFR Requirements — COMPLETED and APPROVED
+  - [x] NFR Design — COMPLETED and APPROVED
+  - [x] Infrastructure Design — COMPLETED and APPROVED
+  - [x] Code Generation — COMPLETED (awaiting approval)
 - [ ] Build and Test — PENDING
 
 ### OPERATIONS PHASE

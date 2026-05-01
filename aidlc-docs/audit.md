@@ -1,5 +1,67 @@
 # AI-DLC Audit Log
 
+## unit-1: ingestion-pipeline — Code Generation Complete
+**Timestamp**: 2026-04-30T00:00:00Z
+**AI Response**: All 16 steps complete. Generated 32 files under services/ingestion/. Stories US-17 and US-18 implemented. PBT coverage: 7 Hypothesis properties across 2 files. Awaiting approval.
+**Context**: unit-1 Code Generation — Part 2 COMPLETED. Awaiting user approval.
+
+---
+
+## unit-1: ingestion-pipeline — Code Generation Approved
+**Timestamp**: 2026-04-30T00:00:00Z
+**User Input**: "yes"
+**AI Response**: Plan approved. Starting Part 2 — code generation, 16 steps.
+**Context**: unit-1 Code Generation — Part 2 (Generation) started.
+
+---
+
+## unit-1: ingestion-pipeline — Code Generation Plan Created
+**Timestamp**: 2026-04-30T00:00:00Z
+**AI Response**: Code generation plan created with 16 steps covering: domain entities, ports, PDFParser, KeywordsExtractor, EmbeddingGenerator, 5 infrastructure layers, ProviderFactory/Config/Logging, IngestionOrchestrator, CLI/Lambda, PBT tests (7 properties), and deployment artifacts. Awaiting approval before generation begins.
+**Context**: unit-1 Code Generation — Part 1 (Planning) complete. Awaiting user approval.
+
+---
+
+## unit-1: ingestion-pipeline — Infrastructure Design Approved
+**Timestamp**: 2026-04-30T00:00:00Z
+**User Input**: "looks good"
+**AI Response**: Infrastructure Design COMPLETED and APPROVED. Proceeding to Code Generation for unit-1.
+**Context**: unit-1 Infrastructure Design — COMPLETED and APPROVED.
+
+---
+
+## unit-1: ingestion-pipeline — Infrastructure Design Completed
+**Timestamp**: 2026-04-30T00:00:00Z
+**User Input**: "Done" (Q1=Lambda/local for now, Q2=Fresh AWS setup/local for now, Q3=New RDS instance)
+**AI Response**: Generated infrastructure-design.md (LOCAL: Docker+Ollama+filesystem; PRODUCTION: Lambda container + RDS pgvector + S3 + Bedrock + VPC) and deployment-architecture.md (ASCII diagrams + migration path + Dockerfile). Awaiting approval.
+**Context**: unit-1 Infrastructure Design — COMPLETED. Awaiting user approval.
+
+---
+
+## unit-1: ingestion-pipeline — NFR Design Approved
+**Timestamp**: 2026-04-30T00:00:00Z
+**User Input**: "Looks good"
+**AI Response**: NFR Design COMPLETED and APPROVED. Proceeding to Infrastructure Design for unit-1.
+**Context**: unit-1 NFR Design — COMPLETED and APPROVED.
+
+---
+
+## unit-1: ingestion-pipeline — NFR Design Completed
+**Timestamp**: 2026-04-30T00:00:00Z
+**User Input**: "continue"
+**AI Response**: NFR Requirements approved. Generated nfr-design-patterns.md (7 patterns: Thread-per-PDF Isolation, Provider Factory, Retry+Backoff, Idempotent Upsert, Thread-Safe Aggregation, Threaded Connection Pool, Dual-Handler Logging) and logical-components.md (7 components: IngestionOrchestrator, ProviderFactory, ThreadedConnectionPool, LoggingConfigurator, VectorDBRepository, KeywordsExtractor, PDFResult). Awaiting approval.
+**Context**: unit-1 NFR Design — COMPLETED. Awaiting user approval.
+
+---
+
+## unit-1: ingestion-pipeline — NFR Requirements Answers Collected
+**Timestamp**: 2026-04-30T00:00:00Z
+**User Input**: "answered next" (answers provided directly in plan file: Q1=B, Q2=B, Q3=B, Q4=A with EventBridge future note, Q5=A with simple log file note)
+**AI Response**: Generated nfr-requirements.md (PERF, SCAL, AVAIL, SEC, REL, OBS, MAINT categories) and tech-stack-decisions.md (TSD-01 through TSD-06). Plan checkboxes all marked complete. Awaiting approval.
+**Context**: unit-1 NFR Requirements — COMPLETED. Awaiting user approval.
+
+---
+
 ## Workspace Detection
 **Timestamp**: 2026-04-23T00:00:00Z
 **User Input**: "Si, quiero inicializar un proyecto. lee @PRD.md"
