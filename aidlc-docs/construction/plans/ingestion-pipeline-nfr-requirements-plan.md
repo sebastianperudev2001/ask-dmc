@@ -3,11 +3,12 @@
 **Fecha**: 2026-04-29
 
 ## Execution Checkboxes
-- [ ] Step 1: Analyze functional design artifacts
-- [ ] Step 2: Generate NFR questions
-- [ ] Step 3: Collect answers
-- [ ] Step 4: Generate nfr-requirements.md
-- [ ] Step 5: Generate tech-stack-decisions.md
+
+- [x] Step 1: Analyze functional design artifacts
+- [x] Step 2: Generate NFR questions
+- [x] Step 3: Collect answers
+- [x] Step 4: Generate nfr-requirements.md
+- [x] Step 5: Generate tech-stack-decisions.md
 
 ---
 
@@ -36,7 +37,7 @@ Familiar SQL interface, cost-effective at low scale, metadata filtering via SQL 
 **C) Amazon Bedrock Knowledge Base**
 Native Bedrock integration, fully serverless, limited control over chunking and retrieval logic since we have a custom pipeline.
 
-[Answer]:
+[Answer]: B
 
 ---
 
@@ -50,7 +51,7 @@ For the local ENV (development), which vector DB should we use?
 
 **C) Qdrant** — lightweight local server via Docker, good metadata filtering support.
 
-[Answer]:
+[Answer]: B
 
 ---
 
@@ -62,9 +63,7 @@ Should PDF processing be sequential or parallel?
 
 **B) Parallel (thread pool)** — process N PDFs concurrently, faster but more complex. Useful if the pipeline will run frequently or the catalog grows significantly.
 
-[Answer]:
-
----
+[Answer]: B
 
 ### Q4 — Pipeline Trigger Mechanism
 
@@ -76,9 +75,7 @@ How should the ingestion pipeline be triggered?
 
 **C) Scheduled (EventBridge)** — runs on a fixed schedule (e.g., nightly). Good if PDFs are updated in batch.
 
-[Answer]:
-
----
+[Answer]: A. But keep a note that in the future it could be a scheduled task via EventBridge.
 
 ### Q5 — Logging / Observability
 
@@ -88,4 +85,4 @@ What level of observability is needed for the pipeline?
 
 **B) Structured logs + CloudWatch** — emit structured logs to CloudWatch Logs in production for persistence and alerting.
 
-[Answer]:
+[Answer]: A. A simple log file is enough for now.
