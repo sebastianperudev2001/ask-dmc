@@ -6,7 +6,7 @@ services:
       POSTGRES_USER: ask_dmc
       POSTGRES_PASSWORD: ask_dmc
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./migrations:/docker-entrypoint-initdb.d
