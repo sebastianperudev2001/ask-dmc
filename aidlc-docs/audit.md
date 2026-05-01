@@ -1,5 +1,13 @@
 # AI-DLC Audit Log
 
+## Post-Build Fix — OllamaEmbeddingsProvider Retry
+**Timestamp**: 2026-04-30T21:35:00Z
+**User Input**: "Documentalo tambien"
+**AI Response**: Added retry/backoff (3 attempts, 1s/2s/4s) to `OllamaEmbeddingsProvider.embed()`. Updated PATTERN-03 in nfr-design-patterns.md to reflect that retry now covers both keywords and embeddings. Root cause: Ollama returns HTTP 500 when swapping models under concurrent load (4 workers calling gemma3 for keywords then nomic-embed-text for embeddings). Committed as `fix: add retry/backoff to Ollama embeddings + fix Docker port conflict`.
+**Context**: Live pipeline run revealed hard failure on embeddings 500 errors. BR-09 graceful degradation only covered keywords; embeddings now also protected by retry before raising.
+
+---
+
 ## Build and Test — Completed
 **Timestamp**: 2026-04-30T00:00:00Z
 **User Input**: "okay, let's continue with AI SDLC"

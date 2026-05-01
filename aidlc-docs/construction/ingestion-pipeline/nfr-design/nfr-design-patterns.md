@@ -69,17 +69,25 @@ ProviderFactory.create(config)
 
 **NFR Drivers**: REL-01, PERF-03
 
-**Problem**: LLM calls (keyword extraction) are network-bound and subject to transient failures (timeout, rate limit). A single failure should not discard the chunk.
+**Problem**: Ollama calls (keyword extraction and embedding generation) are network-bound and subject to transient failures. Under concurrent load, Ollama returns HTTP 500 when swapping between models (e.g. `gemma3` for keywords then `nomic-embed-text` for embeddings). A single transient failure should not discard the chunk.
 
-**Solution**: Wrap each LLM call in a retry loop with exponential backoff. After 3 failures, degrade gracefully (`keywords=[]`).
+**Solution**: Wrap each Ollama call in a retry loop with exponential backoff. Failure handling differs by operation type:
 
 ```
-attempt 1 → LLMError → sleep(1s)
-attempt 2 → LLMError → sleep(2s)
-attempt 3 → LLMError → keywords=[] (chunk preserved, not discarded)
+Keywords (BR-09 — degrade gracefully):
+  attempt 1 → LLMError   → sleep(1s)
+  attempt 2 → LLMError   → sleep(2s)
+  attempt 3 → LLMError   → keywords=[] (chunk preserved)
+
+Embeddings (hard failure after exhausting retries):
+  attempt 1 → 500 Error  → sleep(1s)
+  attempt 2 → 500 Error  → sleep(2s)
+  attempt 3 → 500 Error  → raise (PDF marked Failed)
 ```
 
-**Scope**: Applied only to keyword extraction (BR-09). Embedding generation failures are hard failures — the chunk is not persisted if embedding fails.
+**Scope**: Applied to both `KeywordsExtractor` (via `OllamaLLMProvider`) and `OllamaEmbeddingsProvider.embed()`.
+
+> **Note (2026-04-30)**: Retry was added to `OllamaEmbeddingsProvider` after a live run observed Ollama returning HTTP 500 on the embeddings endpoint when 4 parallel workers saturated it with concurrent keywords + embeddings calls. The backoff gives Ollama time to complete model-swap before the next attempt.
 
 **Backoff schedule**: 1s → 2s → 4s (2^(attempt-1))
 
