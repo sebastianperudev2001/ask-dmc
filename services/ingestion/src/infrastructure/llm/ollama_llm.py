@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import json
-
 import requests
 
 
@@ -10,9 +8,16 @@ class OllamaLLMProvider:
         self._base_url = base_url.rstrip("/")
         self._model = model
 
-    def complete(self, prompt: str) -> str:
+    def complete(self, prompt: str, format: dict | None = None) -> str:
         url = f"{self._base_url}/api/generate"
-        payload = {"model": self._model, "prompt": prompt, "stream": False}
-        response = requests.post(url, json=payload, timeout=60)
+        payload: dict = {
+            "model": self._model,
+            "prompt": prompt,
+            "stream": False,
+            "keep_alive": "10m",
+        }
+        if format is not None:
+            payload["format"] = format
+        response = requests.post(url, json=payload, timeout=120)
         response.raise_for_status()
         return response.json()["response"]

@@ -10,7 +10,7 @@ class BedrockLLMProvider:
         self._model_id = model_id
         self._client = boto3.client("bedrock-runtime")
 
-    def complete(self, prompt: str) -> str:
+    def complete(self, prompt: str, format: dict | None = None) -> str:
         body = json.dumps({
             "anthropic_version": "bedrock-2023-05-31",
             "max_tokens": 256,
