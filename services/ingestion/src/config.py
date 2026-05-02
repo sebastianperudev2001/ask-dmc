@@ -10,13 +10,15 @@ def load_config() -> IngestionConfig:
     try:
         env = ENV(raw_env)
     except ValueError:
-        raise ValueError(f"INGESTION_ENV must be 'local' or 'production', got: {raw_env!r}")
+        raise ValueError(
+            f"INGESTION_ENV must be 'local' or 'production', got: {raw_env!r}"
+        )
 
     vector_db_url = os.environ.get("VECTOR_DB_URL", "")
     if not vector_db_url:
         raise ValueError("VECTOR_DB_URL environment variable is required")
 
-    return IngestionConfig(
+    response = IngestionConfig(
         env=env,
         vector_db_url=vector_db_url,
         local_knowledge_dir=os.environ.get("LOCAL_KNOWLEDGE_DIR", "knowledge_source"),
@@ -32,3 +34,4 @@ def load_config() -> IngestionConfig:
         keywords_model=os.environ.get("KEYWORDS_MODEL", "gemma3:4b"),
         ingestion_workers=int(os.environ.get("INGESTION_WORKERS", "4")),
     )
+    return response
