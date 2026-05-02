@@ -17,6 +17,7 @@ from src.pipeline.embedding_generator import EmbeddingGenerator
 from src.pipeline.keywords_extractor import KeywordsExtractor
 from src.pipeline.pdf_parser import PDFParser
 from src.pipeline.provider_factory import Providers
+from src.infrastructure.vector_db.pgvector_repository import PgVectorRepository
 
 logger = logging.getLogger("ingestion")
 
@@ -85,12 +86,20 @@ class IngestionOrchestrator:
 
             sections = self._parser.parse(pdf_bytes, course_name)
             present_sections = [s for s in sections if s.present and s.content]
+            logger.info(
+                "[%s] Parsed: %d/%d sections present",
+                course_name,
+                len(present_sections),
+                len(sections),
+            )
 
-            present_sections = self._keywords_extractor.extract_keywords(present_sections)
-            chunks = self._embedding_generator.generate(present_sections)
+            keywords = self._keywords_extractor.extract_keywords(present_sections)
+            logger.info("[%s] Keywords done: %s", course_name, keywords)
+            chunks = self._embedding_generator.generate(present_sections, keywords)
+            logger.info("[%s] Embeddings done: %d chunks", course_name, len(chunks))
 
             conn = self._providers.connection_pool.getconn()
-            from src.infrastructure.vector_db.pgvector_repository import PgVectorRepository
+
             vector_db = PgVectorRepository(conn)
             vector_db.upsert(chunks)
 
