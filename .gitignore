@@ -22,6 +22,9 @@ htmlcov/
 # Env
 .env
 
+# Runtime output
+services/ingestion/reports/
+
 # macOS
 .DS_Store
 

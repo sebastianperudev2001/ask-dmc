@@ -1,5 +1,99 @@
 # AI-DLC Audit Log
 
+## New Request — INGESTION_WORKERS Single Source of Truth
+**Timestamp**: 2026-05-02T00:00:00Z
+**User Input**: "I noticed there are many potential point of errors due to several files where INGESTION_WORKERS are defined. The only source of truth should be the .env"
+**AI Response**: Identified root bug: config.py hardcodes `4` for ENV.LOCAL, ignoring the .env variable entirely. Plan: remove env-conditional branching, always read INGESTION_WORKERS from os.environ.
+**Context**: New change request on completed project. Minimal workflow: Workspace Detection → Requirements Analysis → Code Generation → Build and Test.
+
+---
+
+## Workflow Plan Approval — INGESTION_WORKERS Fix
+**Timestamp**: 2026-05-02T00:01:00Z
+**User Input**: "Yes"
+**AI Response**: Proceeding with code generation — modifying src/config.py only.
+**Context**: User approved minimal workflow plan.
+
+---
+
+## Commit Plan Approval — Separar cambios en commits atómicos + documentar divergencias
+**Timestamp**: 2026-05-02T00:10:00Z
+**User Input**: "Yes and update the audit as well to document the Divergence decisions from the original plan"
+**AI Response**: Approved 8-commit plan. Updating audit.md and aidlc-state.md with DIV-02 through DIV-08 before committing. Adding reports/ to .gitignore.
+**Context**: User approved commit grouping and requested divergence documentation.
+
+---
+
+## Divergence Decision — DIV-02: Keywords de por-sección a nivel de documento
+**Timestamp**: 2026-05-02T00:11:00Z
+**Decision**: KeywordsExtractor cambia de extracción per-sección a extracción de keywords a nivel de documento completo.
+**Original Design** (functional-design/business-logic-model.md): `extract_keywords(sections) → list[BrochureSection]` — una llamada LLM por sección, keywords se almacenan en `BrochureSection.keywords`.
+**Actual Implementation**: `extract_keywords(sections) → list[str]` — una única llamada LLM combinando 5 secciones clave (PRESENTACION, SOBRE_ESTE_DIPLOMA, OBJETIVO, A_QUIEN_DIRIGIDO, MALLA_CURRICULAR), retorna una lista de keywords compartida por todos los chunks del brochure.
+**Rationale**: Keywords a nivel de documento son más representativas para búsqueda semántica; keywords por sección eran redundantes (el mismo curso repetido N veces). Reduce de N llamadas LLM a 1 por PDF. Salida estructurada con Pydantic elimina el parsing manual de JSON.
+**Affected Design Files**: business-logic-model.md, domain-entities.md (BrochureSection.keywords removed)
+
+---
+
+## Divergence Decision — DIV-03: EmbeddedChunk pierde section_type; BrochureSection pierde keywords
+**Timestamp**: 2026-05-02T00:11:00Z
+**Decision**: Eliminados dos campos de entidades del dominio: `EmbeddedChunk.section_type` y `BrochureSection.keywords`.
+**Original Design** (functional-design/domain-entities.md): `EmbeddedChunk` tenía `section_type: SectionType`; `BrochureSection` tenía `keywords: list[str] = field(default_factory=list)`.
+**Actual Implementation**: Ambos campos eliminados. Keywords son ahora externas (list[str] pasada explícitamente), y section_type no se persiste en la DB.
+**Rationale**: Consecuencia directa de DIV-02. Keywords son ahora documento-nivel (no por sección). section_type no aporta valor en el vector DB para recuperación — el contenido textual es suficiente para búsqueda semántica.
+**Affected Design Files**: domain-entities.md, pgvector_repository (schema upsert SQL)
+
+---
+
+## Divergence Decision — DIV-04: EmbeddingGenerator — text-splitting + keywords externos
+**Timestamp**: 2026-05-02T00:11:00Z
+**Decision**: EmbeddingGenerator cambia firma y lógica interna: acepta keywords externos, divide textos largos, cambia formato de enriquecimiento.
+**Original Design** (functional-design/business-logic-model.md): `generate(sections: list[BrochureSection]) → list[EmbeddedChunk]` — un chunk por sección, texto enriquecido con `Programa: / Sección:` header, keywords leídos de `section.keywords`.
+**Actual Implementation**: `generate(sections: list[BrochureSection], keywords: list[str]) → list[EmbeddedChunk]` — texto dividido en chunks de 2000 chars con overlap de 200 (produce múltiples chunks por sección si el contenido es largo), formato `[section_type]\ncontent`, keywords documento-nivel aplicados a todos los chunks.
+**Rationale**: Secciones largas (ej. MALLA_CURRICULAR) excedían el límite de tokens del modelo de embeddings. Text-splitting garantiza que ningún contenido sea truncado. Keywords externos vienen de DIV-02.
+**Affected Design Files**: business-logic-model.md (EmbeddingGenerator algoritmo), domain-entities.md (EmbeddedChunk.id now includes part index for multi-chunk sections)
+
+---
+
+## Divergence Decision — DIV-05: Schema — eliminado section_type, embedding dim 1536→768
+**Timestamp**: 2026-05-02T00:11:00Z
+**Decision**: Tabla `brochure_chunks` pierde columna `section_type`, embedding dimension cambia de 1536 a 768.
+**Original Design** (migrations/001): `section_type TEXT NOT NULL`, `embedding vector(1536)`.
+**Actual Implementation**: Columna `section_type` eliminada. `embedding vector(768)`. Nueva migración 002 trunca la tabla para aplicar el cambio de esquema.
+**Rationale**: section_type eliminado por DIV-03. Dimensión 1536 era para Bedrock Titan (`amazon.titan-embed-text-v2:0`); el modelo local `nomic-embed-text` de Ollama produce vectores de 768 dimensiones. Corrección necesaria para que los inserts no fallen.
+**Affected Design Files**: migrations/001_create_brochure_chunks.sql, pgvector_repository.py
+
+---
+
+## Divergence Decision — DIV-06: PATTERN-03 Retry eliminado de OllamaEmbeddingsProvider
+**Timestamp**: 2026-05-02T00:11:00Z
+**Decision**: Retry con exponential backoff eliminado de `OllamaEmbeddingsProvider.embed()`. Reemplazado por `keep_alive=10m`.
+**Original Design** (nfr-design/nfr-design-patterns.md PATTERN-03): Retry de 3 intentos con backoff 1s→2s→4s en `OllamaEmbeddingsProvider.embed()`. Fue añadido como post-build fix el 2026-04-30 para cubrir HTTP 500 de Ollama bajo carga concurrente.
+**Actual Implementation**: Sin retry. Parámetro `keep_alive=10m` en el payload de la llamada a Ollama. Mejor reporte de errores (verifica `error` y `embedding` en la respuesta JSON).
+**Rationale**: La causa raíz de los errores HTTP 500 era que Ollama descargaba el modelo entre llamadas concurrentes (model swap entre gemma3 y nomic-embed-text). `keep_alive` previene la descarga, eliminando la condición que causaba el error — el retry trataba el síntoma, no la causa.
+**Affected Design Files**: nfr-design/nfr-design-patterns.md (PATTERN-03)
+
+---
+
+## Divergence Decision — DIV-07: LLMProvider port — parámetro format para structured output
+**Timestamp**: 2026-05-02T00:11:00Z
+**Decision**: Interfaz `LLMProvider.complete()` agrega parámetro opcional `format: dict | None`.
+**Original Design** (ports/llm_provider.py): `complete(prompt: str) → str`.
+**Actual Implementation**: `complete(prompt: str, format: dict | None = None) → str`. OllamaLLMProvider pasa `format` al payload de Ollama si no es None. BedrockLLMProvider acepta el parámetro pero lo ignora (Bedrock no soporta structured output de la misma forma).
+**Rationale**: Consecuencia de DIV-02. La extracción de keywords usa el JSON schema de Pydantic (`KeywordsResponse.model_json_schema()`) pasado como `format` a Ollama para forzar salida estructurada válida. Elimina el parsing manual de JSON y los fallos por markdown fences en la respuesta.
+**Affected Design Files**: ports/llm_provider.py, infrastructure/llm/ollama_llm.py, infrastructure/llm/bedrock_llm.py
+
+---
+
+## Divergence Decision — DIV-08: INGESTION_WORKERS — siempre desde .env, sin hardcode por env
+**Timestamp**: 2026-05-02T00:12:00Z
+**Decision**: `config.py` elimina el condicional que ignoraba `INGESTION_WORKERS` para `ENV.LOCAL`.
+**Original Design** (src/config.py): `ingestion_workers=4 if env == ENV.LOCAL else int(os.environ.get("INGESTION_WORKERS", "4"))` — hardcodeaba `4` para entorno local sin leer el .env.
+**Actual Implementation**: `ingestion_workers=int(os.environ.get("INGESTION_WORKERS", "4"))` — siempre lee del entorno, fallback `"4"` solo si la variable no existe.
+**Rationale**: `.env` debe ser la única fuente de verdad. El condicional previo hacía que cambiar `INGESTION_WORKERS` en `.env` no tuviera efecto en LOCAL, creando un bug silencioso.
+**Affected Design Files**: src/config.py
+
+---
+
 ## Post-Build Fix — OllamaEmbeddingsProvider Retry
 **Timestamp**: 2026-04-30T21:35:00Z
 **User Input**: "Documentalo tambien"

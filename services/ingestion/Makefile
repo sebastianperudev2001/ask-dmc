@@ -1,3 +1,8 @@
+ifneq (,$(wildcard .env))
+include .env
+export
+endif
+
 .PHONY: install test test-unit test-pbt run db-up db-down lint
 
 install:
