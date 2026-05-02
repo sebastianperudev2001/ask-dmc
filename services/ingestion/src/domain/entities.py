@@ -30,14 +30,12 @@ class BrochureSection:
     section_type: SectionType
     content: str
     present: bool = True
-    keywords: list[str] = field(default_factory=list)
 
 
 @dataclass
 class EmbeddedChunk:
     id: str
     course_name: str
-    section_type: SectionType
     content: str
     embedding: list[float]
     keywords: list[str]

@@ -6,8 +6,8 @@ from pgvector.psycopg2 import register_vector
 from src.domain.entities import EmbeddedChunk
 
 UPSERT_SQL = """
-INSERT INTO brochure_chunks (id, course_name, section_type, content, embedding, keywords)
-VALUES (%s, %s, %s, %s, %s, %s)
+INSERT INTO brochure_chunks (id, course_name, content, embedding, keywords)
+VALUES (%s, %s, %s, %s, %s)
 ON CONFLICT (id) DO UPDATE SET
     content   = EXCLUDED.content,
     embedding = EXCLUDED.embedding,
@@ -28,7 +28,6 @@ class PgVectorRepository:
                 cur.execute(UPSERT_SQL, (
                     chunk.id,
                     chunk.course_name,
-                    chunk.section_type.value,
                     chunk.content,
                     chunk.embedding,
                     chunk.keywords,
