@@ -1,5 +1,13 @@
 # AI-DLC Audit Log
 
+## New Request — nomic-embed-text Asymmetric Prefix Fix
+**Timestamp**: 2026-05-03T00:00:00Z
+**User Input**: "Okay, using AI-SDLC fix the prefix issue. I understand it's basically adding the prefix and document it"
+**AI Response**: Added `search_document:` prefix to `EmbeddingGenerator.generate()` in `src/pipeline/embedding_generator.py` and `search_query:` prefix to the question embedding call in `scripts/test_rag.py`. Documented change in aidlc-state.md as DIV-09.
+**Context**: RAG quality assessment identified that `nomic-embed-text` requires asymmetric prefixes (`search_document:` for indexed content, `search_query:` for queries) to produce well-aligned cosine similarities. Both files were missing these prefixes. After this fix, re-ingestion is required to recompute all stored embeddings with the correct prefix.
+
+---
+
 ## New Request — INGESTION_WORKERS Single Source of Truth
 **Timestamp**: 2026-05-02T00:00:00Z
 **User Input**: "I noticed there are many potential point of errors due to several files where INGESTION_WORKERS are defined. The only source of truth should be the .env"

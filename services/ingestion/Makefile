@@ -3,7 +3,7 @@ include .env
 export
 endif
 
-.PHONY: install test test-unit test-pbt run db-up db-down lint
+.PHONY: install test test-unit test-pbt run test-rag db-up db-down lint
 
 install:
 	pip install -r requirements-dev.txt
@@ -19,6 +19,9 @@ test-pbt:
 
 run:
 	PYTHONPATH=. python cli.py
+
+test-rag:
+	PYTHONPATH=. python scripts/test_rag.py
 
 db-up:
 	docker compose up -d
