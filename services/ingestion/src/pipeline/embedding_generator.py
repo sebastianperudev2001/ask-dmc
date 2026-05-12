@@ -6,7 +6,7 @@ logger = logging.getLogger("ingestion.embedding")
 from src.domain.entities import BrochureSection, EmbeddedChunk
 from src.ports.embeddings_provider import EmbeddingsProvider
 
-_MAX_CHARS = 2000
+_MAX_CHARS = 1500
 _OVERLAP = 200
 
 
