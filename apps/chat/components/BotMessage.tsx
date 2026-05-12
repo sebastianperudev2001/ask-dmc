@@ -1,3 +1,4 @@
+import ReactMarkdown from 'react-markdown'
 import type { BotMsg } from '@/types/chat'
 import BotAvatar from './BotAvatar'
 import ThinkingBlock from './ThinkingBlock'
@@ -34,8 +35,8 @@ const BotMessage = ({ msg }: BotMessageProps) => {
           status={toolStatus}
         />
         {(msg.answer || msg.phase === 'streaming') && (
-          <div style={{ whiteSpace: 'pre-wrap', color: 'var(--color-text)' }}>
-            {msg.answer}
+          <div className="prose">
+            <ReactMarkdown>{msg.answer}</ReactMarkdown>
             {!msg.answerDone && <span className="cursor" />}
           </div>
         )}
