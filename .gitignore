@@ -36,3 +36,4 @@ services/ingestion/reports/
 apps/chat/.next/
 apps/chat/node_modules/
 apps/chat/.env.local
+next-env.d.ts
