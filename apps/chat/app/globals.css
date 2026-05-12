@@ -1,0 +1,232 @@
+@import "tailwindcss";
+
+/* Dark mode: applied when .dark class is on <html> */
+@variant dark (&:where(.dark, .dark *));
+
+/* ── Design tokens ── */
+@theme {
+  --color-brand:        #0b1e3f;
+  --color-brand-2:      #1e3b73;
+  --color-brand-ink:    #ffffff;
+  --color-accent:       #f2c14e;
+  --color-accent-deep:  #c8951f;
+  --color-tool:         #2d6a5a;
+  --color-tool-bg:      #e6f0ec;
+  --color-think-bg:     #f0eef6;
+  --color-think-ink:    #4a3f7a;
+  --color-bg:           #f7f7f4;
+  --color-surface:      #ffffff;
+  --color-surface-2:    #f1f1ec;
+  --color-surface-3:    #e8e8e1;
+  --color-border:       #e4e4dc;
+  --color-border-strong:#d4d4ca;
+  --color-text:         #14181f;
+  --color-text-muted:   #5b6472;
+  --color-text-faint:   #8b94a3;
+  --color-danger:       #b3261e;
+
+  --font-sans: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --shadow-sm: 0 1px 2px rgba(11,30,63,.05);
+  --shadow:    0 1px 3px rgba(11,30,63,.06), 0 4px 12px rgba(11,30,63,.04);
+  --shadow-lg: 0 12px 40px rgba(11,30,63,.12);
+}
+
+/* ── Dark mode overrides ── */
+.dark {
+  --color-brand:        #4a7dd1;
+  --color-brand-2:      #6a96e0;
+  --color-brand-ink:    #0c0f15;
+  --color-accent:       #f5cd6a;
+  --color-accent-deep:  #f2c14e;
+  --color-tool:         #5fbfa6;
+  --color-tool-bg:      #15302a;
+  --color-think-bg:     #1e1a2e;
+  --color-think-ink:    #b6a8e0;
+  --color-bg:           #0c0f15;
+  --color-surface:      #141821;
+  --color-surface-2:    #1a1f2a;
+  --color-surface-3:    #232936;
+  --color-border:       #232936;
+  --color-border-strong:#303849;
+  --color-text:         #eef0f4;
+  --color-text-muted:   #9aa3b2;
+  --color-text-faint:   #6a7385;
+}
+
+/* ── Base ── */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  font-family: var(--font-sans);
+  background: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "ss01", "cv11";
+  overflow: hidden;
+}
+button { font-family: inherit; cursor: pointer; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--color-text-faint); }
+
+/* ── Keyframes ── */
+@keyframes blink  { 50% { opacity: 0; } }
+@keyframes spin   { to  { transform: rotate(360deg); } }
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@keyframes ring {
+  0%   { opacity: 0.6; transform: scale(0.7); }
+  100% { opacity: 0;   transform: scale(1.4); }
+}
+@keyframes core {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(0.85); }
+}
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-accent) 70%, transparent); }
+  70%  { box-shadow: 0 0 0 6px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+/* ── BotAvatar ── */
+.bot-avatar {
+  border-radius: 50%;
+  background: var(--color-brand);
+  display: grid;
+  place-items: center;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.bot-avatar svg { display: block; }
+.bot-avatar .ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-accent);
+  opacity: 0;
+  animation: ring 2.4s ease-out infinite;
+}
+.bot-avatar .ring.r2 { animation-delay: 1.2s; }
+.bot-avatar.thinking .core {
+  animation: core 1.4s ease-in-out infinite;
+}
+
+/* ── Thinking block ── */
+.thinking {
+  background: var(--color-think-bg);
+  border: 1px solid color-mix(in oklab, var(--color-think-ink) 18%, transparent);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  overflow: hidden;
+}
+.thinking-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  user-select: none;
+  color: var(--color-think-ink);
+  font-weight: 500;
+}
+.thinking-head .chev { margin-left: auto; transition: transform .15s; opacity: .7; }
+.thinking.open .thinking-head .chev { transform: rotate(90deg); }
+.thinking-body {
+  padding: 10px 12px 12px;
+  color: var(--color-think-ink);
+  line-height: 1.55;
+  border-top: 1px dashed color-mix(in oklab, var(--color-think-ink) 25%, transparent);
+  font-size: 12.5px;
+}
+.thinking-body p { margin: 0 0 8px; }
+.thinking-body p:last-child { margin-bottom: 0; }
+.thinking-body .pending {
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--color-think-ink) 50%, transparent) 0%,
+    color-mix(in oklab, var(--color-think-ink) 90%, transparent) 50%,
+    color-mix(in oklab, var(--color-think-ink) 50%, transparent) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 1.6s linear infinite;
+}
+.thinking.live .thinking-head .spinner {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in oklab, var(--color-think-ink) 30%, transparent);
+  border-top-color: var(--color-think-ink);
+  animation: spin 0.8s linear infinite;
+}
+
+/* ── Tool-call block ── */
+.toolcall {
+  background: var(--color-tool-bg);
+  border: 1px solid color-mix(in oklab, var(--color-tool) 25%, transparent);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  overflow: hidden;
+}
+.toolcall-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  user-select: none;
+  color: var(--color-tool);
+}
+.toolcall-head .name { font-weight: 600; letter-spacing: -0.01em; }
+.toolcall-head .status {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: .85;
+}
+.toolcall-head .chev { transition: transform .15s; opacity: .6; }
+.toolcall.open .toolcall-head .chev { transform: rotate(90deg); }
+.toolcall-body {
+  border-top: 1px dashed color-mix(in oklab, var(--color-tool) 30%, transparent);
+  padding: 10px 12px;
+  color: color-mix(in oklab, var(--color-tool) 85%, var(--color-text));
+  white-space: pre-wrap;
+  line-height: 1.5;
+  background: color-mix(in oklab, var(--color-tool-bg) 70%, var(--color-surface));
+}
+.toolcall.running .toolcall-head .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  animation: pulse 1.2s infinite;
+}
+
+/* ── Streaming cursor ── */
+.cursor {
+  display: inline-block;
+  width: 7px;
+  height: 16px;
+  background: var(--color-text);
+  margin-left: 2px;
+  vertical-align: -2px;
+  animation: blink 1s steps(1) infinite;
+}
