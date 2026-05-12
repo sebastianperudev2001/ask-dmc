@@ -31,3 +31,8 @@ services/ingestion/reports/
 # IDEs
 .idea/
 .vscode/
+
+# Next.js
+apps/chat/.next/
+apps/chat/node_modules/
+apps/chat/.env.local
