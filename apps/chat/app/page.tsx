@@ -1,3 +1,5 @@
-const Page = () => <div style={{ padding: 24 }}>DMC Chat — placeholder</div>
+import ChatApp from '@/components/ChatApp'
+
+const Page = () => <ChatApp />
 
 export default Page
