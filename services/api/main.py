@@ -10,6 +10,7 @@ import psycopg2
 import requests
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pgvector.psycopg2 import register_vector
 from pydantic import BaseModel
@@ -45,6 +46,14 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="DMC RAG API", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_methods=["POST", "GET"],
+    allow_headers=["*"],
+    expose_headers=["X-Sources"],
+)
 
 
 class AskRequest(BaseModel):
