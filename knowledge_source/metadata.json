@@ -1,0 +1,240 @@
+{
+  "version": 1,
+  "description": "Metadata de brochures para usar como primera capa de retrieval antes de consultar pgvector.",
+  "documents": [
+    {
+      "id": "curso_introduccion_a_sql_y_python_para_analisis_de_datos",
+      "file_name": "curso_introduccion_a_sql_y_python_para_analisis_de_datos.pdf",
+      "title": "Introducción a SQL y Python para Análisis de Datos",
+      "program_type": "curso",
+      "aliases": ["intro sql python", "sql y python", "analisis de datos con sql y python"],
+      "keywords": ["sql", "python", "analisis de datos", "base de datos", "programacion"],
+      "topics": ["SQL", "Python", "análisis de datos"]
+    },
+    {
+      "id": "curso_microsoft_fabric_for_analytics",
+      "file_name": "curso_microsoft_fabric_for_analytics.pdf",
+      "title": "Microsoft Fabric for Analytics",
+      "program_type": "curso",
+      "aliases": ["microsoft fabric", "fabric analytics", "ms fabric"],
+      "keywords": ["microsoft fabric", "analytics", "data analytics", "microsoft", "bi"],
+      "topics": ["Microsoft Fabric", "analytics", "business intelligence"]
+    },
+    {
+      "id": "diploma_advanced_data_analyst",
+      "file_name": "diploma_advanced_data_analyst.pdf",
+      "title": "Advanced Data Analyst",
+      "program_type": "diploma",
+      "aliases": ["ada", "advanced data analyst con ia", "data analyst avanzado"],
+      "keywords": ["data analyst", "analisis de datos", "copilot", "chatgpt", "ia", "analytics"],
+      "topics": ["data analytics", "AI assistance", "Copilot", "ChatGPT"]
+    },
+    {
+      "id": "diploma_advanced_data_engineer",
+      "file_name": "diploma_advanced_data_engineer.pdf",
+      "title": "Advanced Data Engineer",
+      "program_type": "diploma",
+      "aliases": ["ade", "advanced data engineer", "data engineer avanzado"],
+      "keywords": ["data engineer", "ingenieria de datos", "data pipelines", "arquitectura de datos", "etl"],
+      "topics": ["data engineering", "pipelines", "arquitectura de datos"]
+    },
+    {
+      "id": "diploma_advanced_data_scientist",
+      "file_name": "diploma_advanced_data_scientist.pdf",
+      "title": "Advanced Data Scientist",
+      "program_type": "diploma",
+      "aliases": ["ads", "advanced data scientist", "data scientist avanzado"],
+      "keywords": ["data scientist", "ciencia de datos", "machine learning", "modelos predictivos", "analytics"],
+      "topics": ["data science", "machine learning", "modelado predictivo"]
+    },
+    {
+      "id": "diploma_advanced_data_scientist_2",
+      "file_name": "diploma_advanced_data_scientist_2.pdf",
+      "title": "Advanced Data Scientist",
+      "program_type": "diploma",
+      "aliases": ["ads", "advanced data scientist", "data scientist avanzado"],
+      "keywords": ["data scientist", "ciencia de datos", "machine learning", "modelos predictivos", "analytics"],
+      "topics": ["data science", "machine learning", "modelado predictivo"]
+    },
+    {
+      "id": "diploma_ai_engineer",
+      "file_name": "diploma_ai_engineer.pdf",
+      "title": "AI Engineer",
+      "program_type": "diploma",
+      "aliases": ["aie", "ai engineer", "artificial intelligence engineer", "ingeniero ia"],
+      "keywords": ["ai engineer", "inteligencia artificial", "ia", "machine learning", "deep learning"],
+      "topics": ["inteligencia artificial", "AI engineering", "machine learning"]
+    },
+    {
+      "id": "diploma_business_analyst",
+      "file_name": "diploma_business_analyst.pdf",
+      "title": "Business Analyst",
+      "program_type": "diploma",
+      "aliases": ["ba", "business analyst", "analista de negocio"],
+      "keywords": ["business analyst", "analisis de negocio", "requerimientos", "procesos", "datos"],
+      "topics": ["business analysis", "procesos", "requerimientos"]
+    },
+    {
+      "id": "diploma_data_analyst",
+      "file_name": "diploma_data_analyst.pdf",
+      "title": "Data Analyst",
+      "program_type": "diploma",
+      "aliases": ["da", "data analyst", "analista de datos"],
+      "keywords": ["data analyst", "analisis de datos", "sql", "excel", "power bi", "python"],
+      "topics": ["data analytics", "reporting", "visualización de datos"]
+    },
+    {
+      "id": "diploma_data_engineer",
+      "file_name": "diploma_data_engineer.pdf",
+      "title": "Data Engineer",
+      "program_type": "diploma",
+      "aliases": ["de", "data engineer", "ingeniero de datos"],
+      "keywords": ["data engineer", "ingenieria de datos", "etl", "pipelines", "big data"],
+      "topics": ["data engineering", "ETL", "pipelines"]
+    },
+    {
+      "id": "diploma_devops_engineer",
+      "file_name": "diploma_devops_engineer.pdf",
+      "title": "DevOps Engineer",
+      "program_type": "diploma",
+      "aliases": ["devops", "devops engineer", "ingeniero devops"],
+      "keywords": ["devops", "ci cd", "automatizacion", "cloud", "infraestructura"],
+      "topics": ["DevOps", "CI/CD", "cloud", "automatización"]
+    },
+    {
+      "id": "diploma_estrategia_de_datos",
+      "file_name": "diploma_estrategia_de_datos.pdf",
+      "title": "Estrategia de Datos",
+      "program_type": "diploma",
+      "aliases": ["edd", "estrategia datos", "data strategy"],
+      "keywords": ["estrategia de datos", "data strategy", "gobierno de datos", "gestion de datos"],
+      "topics": ["data strategy", "gestión de datos", "gobierno de datos"]
+    },
+    {
+      "id": "diploma_gobierno_de_datos_e_ia",
+      "file_name": "diploma_gobierno_de_datos_e_ia.pdf",
+      "title": "Gobierno de Datos e IA",
+      "program_type": "diploma",
+      "aliases": ["gd", "gobierno de datos", "gobierno datos ia", "data governance"],
+      "keywords": ["gobierno de datos", "ia", "data governance", "calidad de datos", "gestion de datos"],
+      "topics": ["data governance", "inteligencia artificial", "calidad de datos"]
+    },
+    {
+      "id": "diploma_marketing_digital_con_ia_y_analitica",
+      "file_name": "diploma_marketing_digital_con_ia_y_analitica.pdf",
+      "title": "Marketing Digital con IA y Analítica",
+      "program_type": "diploma",
+      "aliases": ["marketing digital", "mkt", "marketing con ia", "marketing analytics"],
+      "keywords": ["marketing digital", "ia", "analitica", "marketing analytics", "automatizacion"],
+      "topics": ["marketing digital", "AI", "analytics"]
+    },
+    {
+      "id": "especializacion_automatizacion_de_procesos_y_analitica_para_contadores",
+      "file_name": "especializacion_automatizacion_de_procesos_y_analitica_para_contadores.pdf",
+      "title": "Automatización de Procesos y Analítica para Contadores",
+      "program_type": "especializacion",
+      "aliases": ["apac", "automatizacion para contadores", "analitica para contadores"],
+      "keywords": ["automatizacion de procesos", "analitica", "contabilidad", "contadores", "datos"],
+      "topics": ["automatización", "analítica", "contabilidad"]
+    },
+    {
+      "id": "especializacion_azure_data_engineering",
+      "file_name": "especializacion_azure_data_engineering.pdf",
+      "title": "Azure Data Engineering",
+      "program_type": "especializacion",
+      "aliases": ["azure de", "azure data engineer", "data engineering azure"],
+      "keywords": ["azure", "data engineering", "ingenieria de datos", "cloud", "microsoft"],
+      "topics": ["Azure", "data engineering", "cloud"]
+    },
+    {
+      "id": "especializacion_credit_risk_and_scoring_analytics",
+      "file_name": "especializacion_credit_risk_and_scoring_analytics.pdf",
+      "title": "Credit Risk & Scoring Analytics",
+      "program_type": "especializacion",
+      "aliases": ["credit risk", "scoring analytics", "riesgo crediticio", "credit scoring"],
+      "keywords": ["credit risk", "scoring", "riesgo crediticio", "analytics", "modelos de riesgo"],
+      "topics": ["riesgo crediticio", "scoring", "analytics"]
+    },
+    {
+      "id": "especializacion_ia_para_ejecutivos",
+      "file_name": "especializacion_ia_para_ejecutivos.pdf",
+      "title": "IA para Ejecutivos",
+      "program_type": "especializacion",
+      "aliases": ["aie especializacion", "ia ejecutivos", "inteligencia artificial para ejecutivos"],
+      "keywords": ["ia", "inteligencia artificial", "ejecutivos", "estrategia", "negocio"],
+      "topics": ["inteligencia artificial", "estrategia", "negocio"]
+    },
+    {
+      "id": "especializacion_people_analytics",
+      "file_name": "especializacion_people_analytics.pdf",
+      "title": "People Analytics",
+      "program_type": "especializacion",
+      "aliases": ["people analytics", "hr analytics", "analitica de personas", "analitica rrhh"],
+      "keywords": ["people analytics", "hr analytics", "recursos humanos", "analitica", "talento"],
+      "topics": ["people analytics", "recursos humanos", "analytics"]
+    },
+    {
+      "id": "especializacion_power_bi_potenciado_con_ia",
+      "file_name": "especializacion_power_bi_potenciado_con_ia.pdf",
+      "title": "Power BI Potenciado con IA",
+      "program_type": "especializacion",
+      "aliases": ["power bi ia", "power bi con ia", "power bi potenciado"],
+      "keywords": ["power bi", "ia", "business intelligence", "dashboards", "microsoft"],
+      "topics": ["Power BI", "AI", "business intelligence"]
+    },
+    {
+      "id": "especializacion_python_potenciado_con_ia",
+      "file_name": "especializacion_python_potenciado_con_ia.pdf",
+      "title": "Python Potenciado con IA",
+      "program_type": "especializacion",
+      "aliases": ["python ia", "python con ia", "python potenciado"],
+      "keywords": ["python", "ia", "programacion", "chatgpt", "automatizacion"],
+      "topics": ["Python", "AI", "programación"]
+    },
+    {
+      "id": "power_apps_y_power_automate",
+      "file_name": "power_apps_y_power_automate.pdf",
+      "title": "Power Apps y Power Automate",
+      "program_type": "curso",
+      "aliases": ["power apps", "power automate", "power platform"],
+      "keywords": ["power apps", "power automate", "power platform", "automatizacion", "low code"],
+      "topics": ["Power Apps", "Power Automate", "Power Platform"]
+    },
+    {
+      "id": "power_apps_y_power_automate_2",
+      "file_name": "power_apps_y_power_automate_2.pdf",
+      "title": "Power Apps y Power Automate",
+      "program_type": "curso",
+      "aliases": ["power apps", "power automate", "power platform"],
+      "keywords": ["power apps", "power automate", "power platform", "automatizacion", "low code"],
+      "topics": ["Power Apps", "Power Automate", "Power Platform"]
+    },
+    {
+      "id": "power_bi_nivel_1_reportes_agiles",
+      "file_name": "power_bi_nivel_1_reportes_agiles.pdf",
+      "title": "Power BI Nivel I: Reportes Ágiles",
+      "program_type": "curso",
+      "aliases": ["power bi nivel 1", "power bi reportes agiles", "power bi basico"],
+      "keywords": ["power bi", "reportes", "dashboards", "business intelligence", "visualizacion"],
+      "topics": ["Power BI", "reporting", "dashboards"]
+    },
+    {
+      "id": "python_for_data_engineering",
+      "file_name": "python_for_data_engineering.pdf",
+      "title": "Python for Data Engineering",
+      "program_type": "curso",
+      "aliases": ["python data engineering", "python para data engineering", "python para ingenieria de datos"],
+      "keywords": ["python", "data engineering", "ingenieria de datos", "pipelines", "etl"],
+      "topics": ["Python", "data engineering", "ETL"]
+    },
+    {
+      "id": "python_fundamentals",
+      "file_name": "python_fundamentals.pdf",
+      "title": "Python Fundamentals",
+      "program_type": "curso",
+      "aliases": ["python fundamentos", "python basico", "fundamentos de python"],
+      "keywords": ["python", "fundamentos", "programacion", "programacion basica"],
+      "topics": ["Python", "programación", "fundamentos"]
+    }
+  ]
+}
