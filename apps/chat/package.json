@@ -9,6 +9,9 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@effect/platform": "^0.96.1",
+    "@effect/platform-browser": "^0.76.0",
+    "effect": "^3.21.2",
     "next": "^15.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
