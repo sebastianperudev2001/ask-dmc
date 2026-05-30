@@ -14,11 +14,7 @@ import { expect } from "vitest"
 import { subsetEquality, iterableEquality } from "@vitest/expect"
 
 expect.addEqualityTesters([
-  function fiberFailureUnwrapper(
-    received: unknown,
-    expected: unknown,
-    customTesters: Array<(a: unknown, b: unknown) => boolean | undefined>
-  ): boolean | undefined {
+  function fiberFailureUnwrapper(received, expected, customTesters): boolean | undefined {
     // Only intercept when received is a FiberFailure and expected is a plain object
     if (
       received !== null &&

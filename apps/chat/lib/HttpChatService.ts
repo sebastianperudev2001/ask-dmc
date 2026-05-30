@@ -30,12 +30,15 @@ export const HttpChatServiceLive: Layer.Layer<ChatService, never, HttpClient.Htt
               Headers.get(response.headers, "x-sources")
             )
 
-            // Decode Uint8Array chunks to strings
+            // Decode Uint8Array chunks to strings.
+            // response.stream has error type ResponseError, but we've already validated
+            // the status above, so we map it into ParseError to match ChatError.
             const textStream: Stream.Stream<ChatChunk, ParseError> = response.stream.pipe(
               Stream.map((chunk) => ({
                 _tag: "text" as const,
                 chunk: decoder.decode(chunk, { stream: true }),
-              }))
+              })),
+              Stream.mapError((e) => new ParseError({ cause: e }))
             )
 
             const sourcesStream: Stream.Stream<ChatChunk, ParseError> = xSourcesRaw

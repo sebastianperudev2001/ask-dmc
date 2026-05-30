@@ -62,11 +62,11 @@ describe("HttpChatService", () => {
     )
 
     const arr = Array.from(result)
-    const sourcesChunk = arr.find(
-      (c): c is { _tag: "sources"; sources: unknown[] } => c._tag === "sources"
-    )
+    const sourcesChunk = arr.find((c) => c._tag === "sources")
     expect(sourcesChunk).toBeDefined()
-    expect(sourcesChunk?.sources).toEqual(sources)
+    if (sourcesChunk?._tag === "sources") {
+      expect(sourcesChunk.sources).toEqual(sources)
+    }
   })
 
   it("fails with NetworkError on non-2xx status", async () => {
