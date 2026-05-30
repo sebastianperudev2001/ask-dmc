@@ -10,7 +10,7 @@
  */
 import { Cause } from "effect"
 import { isFiberFailure, FiberFailureCauseId } from "effect/Runtime"
-import { expect, vi } from "vitest"
+import { expect } from "vitest"
 import { subsetEquality, iterableEquality } from "@vitest/expect"
 
 expect.addEqualityTesters([

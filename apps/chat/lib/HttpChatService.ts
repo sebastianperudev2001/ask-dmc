@@ -1,5 +1,5 @@
-import { Effect, Layer, Stream } from "effect"
-import { HttpClient, HttpClientRequest, FetchHttpClient } from "@effect/platform"
+import { Effect, Layer, Option, Stream } from "effect"
+import { Headers, HttpClient, HttpClientRequest, FetchHttpClient } from "@effect/platform"
 import { ChatService, type ChatChunk } from "./ChatService"
 import { NetworkError, ParseError } from "@/types/errors"
 import type { Source } from "@/types/chat"
@@ -26,11 +26,12 @@ export const HttpChatServiceLive: Layer.Layer<ChatService, never, HttpClient.Htt
               return yield* Effect.fail(new NetworkError({ status: response.status }))
             }
 
-            const xSourcesRaw: string | undefined =
-              (response.headers as Record<string, string>)["x-sources"]
+            const xSourcesRaw: string | undefined = Option.getOrUndefined(
+              Headers.get(response.headers, "x-sources")
+            )
 
             // Decode Uint8Array chunks to strings
-            const textStream: Stream.Stream<ChatChunk, never> = response.stream.pipe(
+            const textStream: Stream.Stream<ChatChunk, ParseError> = response.stream.pipe(
               Stream.map((chunk) => ({
                 _tag: "text" as const,
                 chunk: decoder.decode(chunk, { stream: true }),
@@ -49,7 +50,7 @@ export const HttpChatServiceLive: Layer.Layer<ChatService, never, HttpClient.Htt
               : Stream.empty
 
             return Stream.concat(
-              textStream as Stream.Stream<ChatChunk, ParseError>,
+              textStream,
               sourcesStream
             ) as Stream.Stream<ChatChunk, ParseError>
           })
