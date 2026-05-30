@@ -1,6 +1,6 @@
 'use client'
-import { useState, useCallback } from 'react'
-import { Effect, Stream } from 'effect'
+import { useState, useCallback, useEffect, useRef } from 'react'
+import { Effect, Fiber, Stream } from 'effect'
 import type { Message, BotMsg, UserMsg, Source } from '@/types/chat'
 import { ChatService } from '@/lib/ChatService'
 import { useRuntime } from '@/lib/RuntimeProvider'
@@ -49,6 +49,15 @@ export const useChat = (): UseChatReturn => {
   const runtime = useRuntime()
   const [messages, setMessages] = useState<Message[]>([])
   const [busy, setBusy] = useState(false)
+  const fiberRef = useRef<Fiber.RuntimeFiber<void, unknown> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (fiberRef.current) {
+        runtime.runFork(Fiber.interrupt(fiberRef.current))
+      }
+    }
+  }, [runtime])
 
   const patchLast = (patch: (prev: BotMsg) => BotMsg) => {
     setMessages((prev) => {
@@ -68,7 +77,7 @@ export const useChat = (): UseChatReturn => {
     setMessages((prev) => [...prev, userMsg, botMsg])
     setBusy(true)
 
-    runtime.runFork(
+    fiberRef.current = runtime.runFork(
       Effect.gen(function* () {
         const svc = yield* ChatService
         yield* svc.stream(text).pipe(
@@ -78,8 +87,11 @@ export const useChat = (): UseChatReturn => {
               if (chunk._tag === 'sources') patchLast((b) => applyDone(b, chunk.sources))
             })
           ),
-          Stream.catchAll(() =>
-            Stream.fromEffect(Effect.sync(() => patchLast((b) => applyDone(b, []))))
+          Stream.catchAll((err) =>
+            Stream.fromEffect(Effect.sync(() => {
+              console.error('Chat error:', err)
+              patchLast((b) => applyDone(b, []))
+            }))
           ),
           Stream.ensuring(Effect.sync(() => setBusy(false))),
           Stream.runDrain,
