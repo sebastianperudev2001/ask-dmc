@@ -6,7 +6,7 @@ endif
 .PHONY: install run
 
 install:
-	pip install -r requirements.txt
+	uv sync
 
 run:
-	PYTHONPATH=. uvicorn main:app --reload --port 8000
+	PYTHONPATH=. uv run uvicorn main:app --reload --port 8000

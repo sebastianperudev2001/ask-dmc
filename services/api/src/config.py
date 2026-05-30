@@ -1,27 +1,15 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from pathlib import Path
 
-
-@dataclass
-class ApiConfig:
-    vector_db_url: str
-    ollama_base_url: str
-    ollama_embeddings_model: str
-    ollama_llm_model: str
-    rag_top_k: int
+from src.domain.entities import ApiConfig
 
 
 def load_config() -> ApiConfig:
-    vector_db_url = os.environ.get("VECTOR_DB_URL", "")
-    if not vector_db_url:
-        raise ValueError("VECTOR_DB_URL environment variable is required")
-
+    default_metadata_path = Path(__file__).resolve().parent / "domain" / "metadata.json"
     return ApiConfig(
-        vector_db_url=vector_db_url,
-        ollama_base_url=os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434"),
-        ollama_embeddings_model=os.environ.get("OLLAMA_EMBEDDINGS_MODEL", "nomic-embed-text"),
-        ollama_llm_model=os.environ.get("OLLAMA_LLM_MODEL", "gemma4"),
-        rag_top_k=int(os.environ.get("RAG_TOP_K", "5")),
+        metadata_path=default_metadata_path,
+        aws_region=os.environ.get("AWS_DEFAULT_REGION", "us-east-1"),
+        bedrock_model_id=os.environ.get("BEDROCK_MODEL_ID", "us.anthropic.claude-sonnet-4-5-20251001"),
     )
