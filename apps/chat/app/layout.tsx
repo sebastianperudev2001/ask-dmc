@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
+import { RuntimeProvider } from '@/lib/RuntimeProvider'
 
 const geistSans = Geist({
   subsets: ['latin'],
@@ -19,7 +20,9 @@ export const metadata: Metadata = {
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => (
   <html lang="es-PE" className={`${geistSans.variable} ${geistMono.variable}`}>
-    <body>{children}</body>
+    <body>
+      <RuntimeProvider>{children}</RuntimeProvider>
+    </body>
   </html>
 )
 
