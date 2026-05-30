@@ -1,7 +1,9 @@
 'use client'
 import { useState, useCallback } from 'react'
+import { Effect, Stream } from 'effect'
 import type { Message, BotMsg, UserMsg, Source } from '@/types/chat'
-import { streamAsk } from '@/lib/api'
+import { ChatService } from '@/lib/ChatService'
+import { useRuntime } from '@/lib/RuntimeProvider'
 
 // ── Pure state helpers (exported for testing) ──────────────────────────────
 
@@ -39,11 +41,12 @@ export const applyDone = (msg: BotMsg, sources: Source[]): BotMsg => ({
 type UseChatReturn = {
   messages: Message[]
   busy: boolean
-  sendMessage: (text: string) => Promise<void>
+  sendMessage: (text: string) => void
   clearMessages: () => void
 }
 
 export const useChat = (): UseChatReturn => {
+  const runtime = useRuntime()
   const [messages, setMessages] = useState<Message[]>([])
   const [busy, setBusy] = useState(false)
 
@@ -57,28 +60,33 @@ export const useChat = (): UseChatReturn => {
     })
   }
 
-  const sendMessage = useCallback(async (text: string) => {
+  const sendMessage = useCallback((text: string) => {
     if (busy) return
 
     const userMsg = buildUserMsg(text)
-    const botMsg  = initialBotMsg(text)
-
+    const botMsg = initialBotMsg(text)
     setMessages((prev) => [...prev, userMsg, botMsg])
     setBusy(true)
 
-    try {
-      for await (const chunk of streamAsk(text, (sources) => {
-        patchLast((b) => applyDone(b, sources))
-      })) {
-        patchLast((b) => applyChunk(b, chunk))
-      }
-    } catch (err) {
-      patchLast((b) => applyDone(b, []))
-      console.error('Chat error:', err)
-    } finally {
-      setBusy(false)
-    }
-  }, [busy])
+    runtime.runFork(
+      Effect.gen(function* () {
+        const svc = yield* ChatService
+        yield* svc.stream(text).pipe(
+          Stream.tap((chunk) =>
+            Effect.sync(() => {
+              if (chunk._tag === 'text') patchLast((b) => applyChunk(b, chunk.chunk))
+              if (chunk._tag === 'sources') patchLast((b) => applyDone(b, chunk.sources))
+            })
+          ),
+          Stream.catchAll(() =>
+            Stream.fromEffect(Effect.sync(() => patchLast((b) => applyDone(b, []))))
+          ),
+          Stream.ensuring(Effect.sync(() => setBusy(false))),
+          Stream.runDrain,
+        )
+      })
+    )
+  }, [runtime, busy])
 
   const clearMessages = useCallback(() => {
     if (!busy) setMessages([])
