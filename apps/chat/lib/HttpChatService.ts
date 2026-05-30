@@ -20,7 +20,9 @@ export const HttpChatServiceLive: Layer.Layer<ChatService, never, HttpClient.Htt
               HttpClientRequest.bodyUnsafeJson({ question })
             )
 
-            const response = yield* client.execute(request)
+            const response = yield* client.execute(request).pipe(
+              Effect.mapError(() => new NetworkError({ status: 0 }))
+            )
 
             if (response.status < 200 || response.status >= 300) {
               return yield* Effect.fail(new NetworkError({ status: response.status }))
@@ -52,20 +54,11 @@ export const HttpChatServiceLive: Layer.Layer<ChatService, never, HttpClient.Htt
                 )
               : Stream.empty
 
-            return Stream.concat(
-              textStream,
-              sourcesStream
-            ) as Stream.Stream<ChatChunk, ParseError>
+            return Stream.concat(textStream, sourcesStream)
           })
 
           // Stream.unwrap handles the Effect → Stream conversion
-          return Stream.unwrap(
-            program as Effect.Effect<
-              Stream.Stream<ChatChunk, NetworkError | ParseError>,
-              NetworkError | ParseError,
-              never
-            >
-          )
+          return Stream.unwrap(program)
         },
       }
     })
