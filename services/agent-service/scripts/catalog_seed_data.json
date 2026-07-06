@@ -1,0 +1,92 @@
+[
+  {
+    "course_id": "diploma-data-analyst",
+    "name": "Diploma en Data Analyst",
+    "description": "Programa integral para formar analistas de datos capaces de extraer, transformar y visualizar información de negocio para la toma de decisiones.",
+    "category": "Data Analytics",
+    "curriculum": ["SQL", "Excel Avanzado", "Power BI", "Estadística Descriptiva", "Storytelling con Datos"],
+    "price": 2800.00,
+    "duration_weeks": 10
+  },
+  {
+    "course_id": "power-bi",
+    "name": "Power BI para Análisis de Negocio",
+    "description": "Curso especializado en Power BI para construir dashboards interactivos y reportes ejecutivos.",
+    "category": "Data Analytics",
+    "curriculum": ["Modelado de Datos", "DAX", "Power Query", "Dashboards Ejecutivos"],
+    "price": 1200.00,
+    "duration_weeks": 6
+  },
+  {
+    "course_id": "diploma-data-scientist",
+    "name": "Diploma en Data Science",
+    "description": "Formación profunda en ciencia de datos: desde estadística y machine learning hasta despliegue de modelos.",
+    "category": "Data Science",
+    "curriculum": ["Python", "Estadística Inferencial", "Machine Learning", "Deep Learning", "MLOps"],
+    "price": 3800.00,
+    "duration_weeks": 16
+  },
+  {
+    "course_id": "machine-learning",
+    "name": "Machine Learning Aplicado",
+    "description": "Curso práctico de machine learning orientado a resolver problemas reales de negocio con modelos supervisados y no supervisados.",
+    "category": "Data Science",
+    "curriculum": ["Python", "Scikit-learn", "Feature Engineering", "Evaluación de Modelos"],
+    "price": 2200.00,
+    "duration_weeks": 8
+  },
+  {
+    "course_id": "diploma-data-engineer",
+    "name": "Diploma en Data Engineering",
+    "description": "Programa para formar ingenieros de datos capaces de diseñar pipelines, arquitecturas de datos y sistemas de procesamiento a gran escala.",
+    "category": "Data Engineering",
+    "curriculum": ["Python", "SQL Avanzado", "Airflow", "Spark", "Arquitectura de Datos en la Nube"],
+    "price": 3500.00,
+    "duration_weeks": 14
+  },
+  {
+    "course_id": "azure-data-engineering",
+    "name": "Azure Data Engineering",
+    "description": "Especialización en ingeniería de datos sobre Microsoft Azure: ingestión, transformación y orquestación de datos en la nube.",
+    "category": "Data Engineering",
+    "curriculum": ["Azure Data Factory", "Azure Databricks", "Azure Synapse", "Pipelines de Datos"],
+    "price": 3200.00,
+    "duration_weeks": 12
+  },
+  {
+    "course_id": "n8n-chatbots",
+    "name": "Automatización de Chatbots con n8n",
+    "description": "Curso práctico para diseñar flujos de automatización e integrar chatbots inteligentes usando n8n.",
+    "category": "IA & Automatización",
+    "curriculum": ["n8n", "Integraciones API", "Diseño de Flujos Conversacionales"],
+    "price": 900.00,
+    "duration_weeks": 4
+  },
+  {
+    "course_id": "diseno-chatbots-python",
+    "name": "Diseño de Chatbots con Python",
+    "description": "Construcción de chatbots inteligentes desde cero usando Python y modelos de lenguaje.",
+    "category": "IA & Automatización",
+    "curriculum": ["Python", "LLMs", "Frameworks de Agentes", "Despliegue de Chatbots"],
+    "price": 1800.00,
+    "duration_weeks": 8
+  },
+  {
+    "course_id": "ia-ejecutivos",
+    "name": "Inteligencia Artificial para Ejecutivos",
+    "description": "Programa orientado a perfiles no técnicos para entender el potencial de la IA generativa en la estrategia de negocio.",
+    "category": "IA & Automatización",
+    "curriculum": ["Fundamentos de IA Generativa", "Casos de Uso de Negocio", "Gobernanza de IA"],
+    "price": 1500.00,
+    "duration_weeks": 5
+  },
+  {
+    "course_id": "people-analytics",
+    "name": "People Analytics",
+    "description": "Aplicación de analítica de datos a la gestión del talento humano y decisiones de recursos humanos.",
+    "category": "Data Analytics",
+    "curriculum": ["Estadística para RRHH", "Power BI", "Modelos Predictivos de Rotación"],
+    "price": 1600.00,
+    "duration_weeks": 6
+  }
+]
