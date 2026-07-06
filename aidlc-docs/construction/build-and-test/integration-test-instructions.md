@@ -167,3 +167,89 @@ rm -rf reports/
 # Stop Docker
 docker compose down
 ```
+
+---
+
+# Integration Test Instructions — agent-service
+
+## Purpose
+
+Verificar `agent-service` contra infraestructura real: Postgres+pgvector real, Azure OpenAI
+real (embeddings), y el Persistent Agent real de Azure AI Foundry (`gpt-5.4-nano`, ver DIV
+de modelo en tech-stack-decisions.md) — a diferencia de `tests/integration/test_websocket_flow.py`
+(Code Generation), que usa fakes. **Requiere recursos Azure aprovisionados** — en este incremento
+se aprovisionó el proyecto de Foundry vía `azd` (ver `docs/provisioning-foundry-azd.md`), no el
+Terraform completo (`infra/agent-service/*.tf` sigue sin aplicar — ver `build-and-test-summary.md`).
+
+## Prerequisites
+
+```bash
+cd services/agent-service
+docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=test pgvector/pgvector:pg16
+psql "postgresql://postgres:test@localhost:5432/postgres" -f migrations/001_create_courses.sql
+az login
+export DATABASE_URL=postgresql://postgres:test@localhost:5432/postgres
+export AZURE_OPENAI_ENDPOINT=https://<tu-recurso>.openai.azure.com/
+export FOUNDRY_PROJECT_ENDPOINT=https://<tu-proyecto>.services.ai.azure.com/
+python -m scripts.seed_catalog   # genera embeddings reales del catálogo
+uvicorn main:app --port 8000 &
+```
+
+## Scenario 1: Recomendación con match exacto (end-to-end real)
+
+**Qué se prueba**: request estructurado → filtro real en Postgres → embedding real de Azure OpenAI → ranking pgvector real → streaming real del agente de Foundry.
+
+```python
+# scripts/manual_ws_check.py (ejecutar manualmente, no en CI por costo de Azure OpenAI/Foundry)
+import asyncio
+import websockets
+import json
+
+async def main():
+    async with websockets.connect("ws://localhost:8000/ws/recommendation") as ws:
+        await ws.send(json.dumps({
+            "type": "recommendation_request",
+            "budget": "3000.00",
+            "max_duration_weeks": 10,
+            "professional_background": "Data Engineer en Yape, proyecto de recomendación de productos",
+            "desired_stack": "Data Science",
+        }))
+        while True:
+            msg = json.loads(await ws.recv())
+            print(msg)
+            if msg["type"] in ("recommendation_done", "no_recommendation"):
+                break
+
+asyncio.run(main())
+```
+
+**Resultado esperado**: una secuencia de `recommendation_delta` seguida de `recommendation_done`
+con `candidates` conteniendo `diploma-data-scientist` o `machine-learning` (área "Data Science").
+
+**✅ Ejecutado y verificado en esta sesión (2026-07-05)** contra recursos Azure reales del
+usuario (Postgres Docker local + Azure OpenAI + Foundry Persistent Agent `gpt-5.4-nano-dmc-bicep`
+en `eastus`): primer `recommendation_delta` en **3.95s** (ligeramente sobre el objetivo de ≤3s —
+ver nota de performance en `build-and-test-summary.md`), `recommendation_done` con 3 candidatos
+(`diploma-data-analyst`, `machine-learning`, `people-analytics`), y el texto compuesto por el
+agente respetó BR-07 (solo referenció datos de esos 3 candidatos). El script
+`scripts/manual_ws_check.py` (generado durante esta verificación) implementa este escenario.
+
+## Scenario 2: Oferta de relajación con confirmación real
+
+**Setup**: usar un `budget`/`max_duration_weeks` que solo matchee dentro del rango ampliado (ej. `budget: 3200`, `max_duration_weeks: 10` contra `azure-data-engineering`, precio 3200/12 semanas — ajustar según el catálogo cargado).
+
+**Qué verificar**: se recibe `relax_filters_offer` primero; enviar `{"type": "relax_filters_response", "confirm": true}` continúa el flujo con streaming real.
+
+## Scenario 3: Timeout real de confirmación (PATTERN-02)
+
+Conectar, disparar una oferta de relajación, **no responder**, y esperar > 5 minutos (o
+reducir `RELAX_CONFIRMATION_TIMEOUT_SECONDS` a 5s para la prueba). Verificar que el servidor
+no crashea y que un mensaje posterior en la misma conexión se trata como un
+`recommendation_request` nuevo (no una respuesta tardía).
+
+## Cleanup
+
+```bash
+kill %1   # detener uvicorn
+docker stop $(docker ps -q --filter ancestor=pgvector/pgvector:pg16)
+```

@@ -106,3 +106,88 @@ ollama pull gemma3:4b
 ```bash
 pip install pgvector==0.3.2
 ```
+
+---
+
+# Build Instructions — agent-service (Azure)
+
+## Prerequisites
+
+| Requirement | Version | Notes |
+|---|---|---|
+| Python | 3.11+ | `python --version` |
+| Docker | Latest | Solo para Postgres+pgvector local (`pgvector/pgvector:pg16`) |
+| Azure CLI | Latest | `az login` — usado por `DefaultAzureCredential` en LOCAL |
+| Acceso a Azure OpenAI + Azure AI Foundry | — | Endpoints en `.env` (ver `.env.example`) |
+
+---
+
+## Build Steps
+
+### 1. Navigate to service directory
+```bash
+cd services/agent-service
+```
+
+### 2. Create and activate virtual environment
+```bash
+python -m venv .venv
+source .venv/bin/activate      # macOS / Linux
+```
+
+### 3. Install dependencies
+```bash
+pip install -e ".[dev]"
+```
+
+### 4. Configure environment
+```bash
+cp .env.example .env
+# Completar DATABASE_URL, AZURE_OPENAI_ENDPOINT, FOUNDRY_PROJECT_ENDPOINT
+az login
+```
+
+### 5. Start PostgreSQL with pgvector (Docker, para desarrollo/tests con DB real)
+```bash
+docker run -d --name agent-service-db -p 5432:5432 -e POSTGRES_PASSWORD=test pgvector/pgvector:pg16
+psql "postgresql://postgres:test@localhost:5432/postgres" -f migrations/001_create_courses.sql
+```
+
+### 6. Cargar el catálogo (genera embeddings vía Azure OpenAI)
+```bash
+python -m scripts.seed_catalog
+```
+
+### 7. Verify build
+```bash
+python -m py_compile $(find . -name "*.py" -not -path "*/.venv/*")
+echo "Build OK"
+```
+
+**Verificado en esta sesión**: `py_compile` sobre los 33 archivos `.py` generados — sin errores de sintaxis.
+
+---
+
+## Expected Output
+- Entorno virtual en `.venv/` con `fastapi`, `asyncpg`, `agent-framework`, `azure-identity`, `openai`, `hypothesis`, `pytest`, etc. instalados
+- Postgres corriendo en `localhost:5432` con la tabla `courses` creada (extensión `pgvector`, índice HNSW)
+- Catálogo cargado con 10 programas y sus embeddings (`text-embedding-3-small`)
+
+---
+
+## Troubleshooting
+
+### `asyncpg` falla al conectar con `sslmode=require` contra Postgres local sin TLS
+```bash
+# En local, usar DATABASE_URL sin forzar SSL (el docker run de arriba no expone TLS):
+DATABASE_URL=postgresql://postgres:test@localhost:5432/postgres  # sin ?sslmode=require
+```
+
+### `az login` no disponible / CI sin credenciales interactivas
+```bash
+# Usar un Service Principal para DefaultAzureCredential en CI:
+export AZURE_CLIENT_ID=... AZURE_CLIENT_SECRET=... AZURE_TENANT_ID=...
+```
+
+### Import error en `agent_framework.azure` / `azure.ai.agents`
+- Verificar la versión instalada del paquete `agent-framework` contra `pyproject.toml` — la superficie del SDK de Foundry está en evolución activa (ver nota en `repository-layer-summary.md`).

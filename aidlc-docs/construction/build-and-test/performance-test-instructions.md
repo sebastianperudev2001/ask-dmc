@@ -123,3 +123,68 @@ conn.close()
 | DB upsert slow | Check pgvector index — run `ANALYZE brochure_chunks;` |
 | LLM bottleneck | Confirm retry backoff is not inflating time; check Ollama/Bedrock latency |
 | Workers don't help | Check if GIL is a bottleneck on CPU-bound steps (unlikely for this I/O-heavy pipeline) |
+
+---
+
+# Performance Test Instructions — agent-service
+
+## Performance Requirements (requirements.md §9.1, heredado — no específico de plataforma)
+
+| Requirement | Target |
+|---|---|
+| Primer `recommendation_delta` | ≤ 3 segundos desde `recommendation_request` (o `relax_filters_response` confirmando) |
+| Filtro SQL + embedding + ranking (pasos 2-7) | Debe dejar presupuesto suficiente del objetivo de 3s antes de invocar al agente |
+
+## Prerequisites
+- Recursos Azure reales desplegados (Container Apps + Postgres + Azure OpenAI + Foundry) — este test mide latencia de red real, no tiene sentido solo contra fakes locales.
+
+## Test 1: Tiempo hasta el primer delta (end-to-end)
+
+```python
+import asyncio, json, time, websockets
+
+async def main():
+    async with websockets.connect("wss://<container-app-fqdn>/ws/recommendation") as ws:
+        start = time.monotonic()
+        await ws.send(json.dumps({
+            "type": "recommendation_request", "budget": "3000.00", "max_duration_weeks": 10,
+            "professional_background": "Data Engineer en Yape", "desired_stack": "Data Science",
+        }))
+        msg = json.loads(await ws.recv())
+        elapsed = time.monotonic() - start
+        print(f"Primer mensaje ({msg['type']}) en {elapsed:.2f}s")
+
+asyncio.run(main())
+```
+
+**Expected**: `elapsed < 3.0` para el primer mensaje relevante (`relax_filters_offer`, `no_exact_match_showing_all`, o el primer `recommendation_delta`).
+
+## Test 2: Impacto de cold start (PATTERN-04, min_replicas=1)
+
+Con `min_replicas: 1` en Container Apps, no debería haber cold start en el flujo normal.
+**Verificar en el portal de Azure** (Container Apps → Revisions → Replicas) que siempre hay
+≥1 réplica activa; si `min_replicas` se reconfigura a 0 en algún momento, repetir Test 1
+inmediatamente después de un período idle (>5 min) para confirmar si el objetivo de 3s se
+incumple — este es precisamente el riesgo que `min_replicas=1` fue elegido para evitar.
+
+## Test 3: Latencia del pipeline de filtro/ranking (sin el agente)
+
+Aislar pasos 2-7 (sin invocar al agente) para saber cuánto presupuesto de los 3s consumen:
+
+```python
+import time
+# dentro de un shell con acceso a PostgresCourseRepository ya configurado
+start = time.monotonic()
+candidates = await repo.find_ranked_candidates(query_embedding, max_price=3000, max_duration_weeks=10, limit=3)
+print(f"Filtro + ranking pgvector: {time.monotonic() - start:.3f}s")
+```
+
+**Expected**: < 0.5s (dado el tamaño del catálogo — decenas de cursos, índices HNSW/B-tree en su lugar).
+
+## Interpreting Results
+
+| Outcome | Action |
+|---|---|
+| Primer delta > 3s con `min_replicas=1` | Perfilar latencia de red hacia Azure OpenAI/Foundry (región East US vs ubicación del cliente); considerar reducir el modelo de chat si la latencia del LLM domina |
+| Filtro/ranking > 0.5s | Verificar que el índice HNSW existe (`\d courses` en psql) y que `ANALYZE courses;` se corrió tras el seed |
+| Cold start incumple 3s con `min_replicas=0` | Confirmar que `min_replicas=1` está aplicado (PATTERN-04) — no se recomienda scale-to-zero para este servicio |
