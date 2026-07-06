@@ -1,4 +1,5 @@
 'use client'
+import { useEffect, useState } from 'react'
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
 import Welcome from './Welcome'
@@ -6,20 +7,38 @@ import MessageList from './MessageList'
 import Composer from './Composer'
 import { useChat } from '@/hooks/useChat'
 import { useDarkMode } from '@/hooks/useDarkMode'
+import { fetchConversations, getStoredConversationId } from '@/lib/WsChatService'
+import { groupConversationsByRecency } from '@/lib/conversationHistory'
+import type { HistoryGroup } from '@/types/chat'
 
 const ChatApp = () => {
-  const { messages, busy, sendMessage, clearMessages } = useChat()
+  const { messages, busy, sendMessage, submitProfileData, clearMessages, switchConversation } = useChat()
   const { dark, toggle } = useDarkMode()
   const showWelcome = messages.length === 0
+  const [historyGroups, setHistoryGroups] = useState<HistoryGroup[]>([])
+
+  // Real conversation history for the Sidebar — replaces the hardcoded mock list (added
+  // after user feedback: "el historial... no jala las sesiones creadas?").
+  useEffect(() => {
+    fetchConversations().then((conversations) => {
+      setHistoryGroups(groupConversationsByRecency(conversations, getStoredConversationId()))
+    })
+  }, [])
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '272px 1fr', height: '100vh', width: '100vw', background: 'var(--color-bg)' }}>
-      <Sidebar dark={dark} onToggleDark={toggle} onNew={clearMessages} />
+      <Sidebar
+        dark={dark}
+        onToggleDark={toggle}
+        onNew={clearMessages}
+        historyGroups={historyGroups}
+        onSelectConversation={switchConversation}
+      />
       <main style={{ display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0, background: 'var(--color-bg)', position: 'relative' }}>
         <TopBar busy={busy} />
         {showWelcome
           ? <Welcome onPick={sendMessage} />
-          : <MessageList messages={messages} />}
+          : <MessageList messages={messages} onSubmitProfileData={submitProfileData} />}
         <Composer onSend={sendMessage} disabled={busy} />
       </main>
     </div>

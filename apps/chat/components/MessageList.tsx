@@ -1,12 +1,15 @@
 'use client'
 import { useEffect, useRef } from 'react'
-import type { Message } from '@/types/chat'
+import type { Message, ProfileData } from '@/types/chat'
 import UserMessage from './UserMessage'
 import BotMessage from './BotMessage'
 
-type MessageListProps = { messages: Message[] }
+type MessageListProps = {
+  messages: Message[]
+  onSubmitProfileData: (callId: string, data: ProfileData) => void
+}
 
-const MessageList = ({ messages }: MessageListProps) => {
+const MessageList = ({ messages, onSubmitProfileData }: MessageListProps) => {
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -34,7 +37,7 @@ const MessageList = ({ messages }: MessageListProps) => {
         {messages.map((m) =>
           m.role === 'user'
             ? <UserMessage key={m.id} text={m.text} />
-            : <BotMessage key={m.id} msg={m} />
+            : <BotMessage key={m.id} msg={m} onSubmitProfileData={onSubmitProfileData} />
         )}
       </div>
     </div>

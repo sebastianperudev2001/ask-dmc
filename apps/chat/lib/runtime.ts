@@ -1,4 +1,4 @@
 import { ManagedRuntime } from "effect"
-import { HttpChatService } from "./HttpChatService"
+import { WsChatServiceLive } from "./WsChatService"
 
-export const AppRuntime = ManagedRuntime.make(HttpChatService)
+export const AppRuntime = ManagedRuntime.make(WsChatServiceLive)

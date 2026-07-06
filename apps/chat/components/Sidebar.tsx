@@ -1,17 +1,16 @@
 'use client'
-import { useState } from 'react'
 import { Icon } from './icons'
-import { HISTORY } from '@/data/mock'
+import type { HistoryGroup } from '@/types/chat'
 
 type SidebarProps = {
   dark: boolean
   onToggleDark: () => void
   onNew: () => void
+  historyGroups: HistoryGroup[]
+  onSelectConversation: (conversationId: string) => void
 }
 
-const Sidebar = ({ dark, onToggleDark, onNew }: SidebarProps) => {
-  const [activeId, setActiveId] = useState('h-1')
-
+const Sidebar = ({ dark, onToggleDark, onNew, historyGroups, onSelectConversation }: SidebarProps) => {
   return (
     <aside
       style={{
@@ -72,7 +71,12 @@ const Sidebar = ({ dark, onToggleDark, onNew }: SidebarProps) => {
 
       {/* History */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '4px 8px 16px', scrollbarWidth: 'thin' }}>
-        {HISTORY.map((g) => (
+        {historyGroups.length === 0 && (
+          <div style={{ padding: '12px 10px', fontSize: 12.5, color: 'var(--color-text-faint)' }}>
+            Aún no hay conversaciones
+          </div>
+        )}
+        {historyGroups.map((g) => (
           <div key={g.group}>
             <div style={{ padding: '12px 10px 6px', fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--color-text-faint)' }}>
               {g.group}
@@ -80,13 +84,13 @@ const Sidebar = ({ dark, onToggleDark, onNew }: SidebarProps) => {
             {g.items.map((item) => (
               <button
                 key={item.id}
-                onClick={() => setActiveId(item.id)}
+                onClick={() => onSelectConversation(item.id)}
                 title={item.title}
                 style={{
                   width: '100%',
                   textAlign: 'left',
-                  background: activeId === item.id ? 'var(--color-surface-2)' : 'transparent',
-                  border: `1px solid ${activeId === item.id ? 'var(--color-border)' : 'transparent'}`,
+                  background: item.active ? 'var(--color-surface-2)' : 'transparent',
+                  border: `1px solid ${item.active ? 'var(--color-border)' : 'transparent'}`,
                   borderRadius: 8,
                   padding: '8px 10px',
                   fontSize: 13,
