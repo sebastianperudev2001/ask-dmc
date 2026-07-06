@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ask-dmc-agent-service"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi==0.115.5",
+    "uvicorn[standard]==0.32.1",
+    "python-dotenv==1.0.1",
+    "pydantic>=2.11.2",
+    "asyncpg==0.30.0",
+    "agent-framework-foundry>=1.10.0",
+    "azure-identity==1.19.0",
+    "azure-keyvault-secrets==4.9.0",
+    "httpx>=0.28.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.3",
+    "pytest-asyncio==0.24.0",
+    "hypothesis==6.115.6",
+    "numpy>=2.2.6",
+    "websockets>=16.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
