@@ -5,7 +5,6 @@ from __future__ import annotations
 import hashlib
 import hmac
 from datetime import datetime, timezone
-from decimal import Decimal
 
 from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient

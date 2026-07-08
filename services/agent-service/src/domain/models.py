@@ -76,13 +76,6 @@ class RecommendationCandidate:
     from_full_catalog: bool = False
 
 
-@dataclass(frozen=True)
-class RecommendationResponse:
-    """Final response payload (candidates only — message_stream is produced by the agent, not this model)."""
-
-    candidates: tuple[RecommendationCandidate, ...]
-
-
 # ── Incremento 2 — chat conversacional + tool-calling + pago (domain-entities.md) ──
 
 

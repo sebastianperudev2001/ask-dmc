@@ -16,9 +16,8 @@ AI-powered sales agent for [DMC Institute](https://dmc.pe). The agent chats free
 │  └── chat/            Next.js 15 — WebSocket chat widget          │
 │                                                                    │
 │  services/                                                        │
-│  ├── agent-service/   FastAPI + Azure AI Foundry agent            │
-│  │                    (tool-calling, Postgres, Mercado Pago)      │
-│  └── ingestion/       PDF → embeddings → pgvector pipeline        │
+│  └── agent-service/   FastAPI + Azure AI Foundry agent            │
+│                       (tool-calling, Postgres, Mercado Pago)      │
 │                                                                    │
 │  infra/agent-service/ Terraform (Azure Container Apps + Postgres) │
 └──────────────────────────────────────────────────────────────────┘
@@ -43,7 +42,6 @@ Request flow:
 | Embeddings (agent-service) | Azure OpenAI `text-embedding-3-small` |
 | Vector store | PostgreSQL 16 + pgvector |
 | Payments | Mercado Pago Checkout Pro |
-| Ingestion pipeline | Ollama (local) / AWS Bedrock + S3 (production) — stays on AWS, not re-platformed |
 | Infra | Terraform → Azure Container Apps, Azure Database for PostgreSQL, Key Vault |
 
 ---
@@ -73,18 +71,17 @@ ask-dmc/
 │   │   │   └── api/                   # ChatWebSocketHandler, MercadoPagoWebhookHandler
 │   │   ├── migrations/                # 001 courses+pgvector, 002 leads/sessions, 003 messages
 │   │   └── scripts/                   # seed_catalog.py, manual_chat_check.py, ...
-│   │
-│   └── ingestion/                    # PDF ingestion pipeline (unchanged since inception)
-│       ├── cli.py                    # Entry point
-│       ├── src/pipeline/             # PDF parser, embeddings, orchestrator
-│       ├── src/infrastructure/       # pgvector, S3, Ollama/Bedrock adapters
-│       ├── migrations/               # SQL schema for the ingestion's own pgvector table
-│       └── docker-compose.yml        # local pgvector database
 │
 ├── infra/agent-service/              # Terraform: Container App, Postgres, Key Vault
 │
-└── knowledge_source/                 # Source PDF brochures for the ingestion pipeline
+└── knowledge_source/                 # Course brochure PDFs — currently unused (see note below)
 ```
+
+> `knowledge_source/` predates `agent-service`: it fed a PDF→embeddings→pgvector ingestion
+> pipeline (`services/ingestion`, the project's original `unit-1`) that was removed because
+> it no longer connected to anything — the live catalog is a curated
+> `services/agent-service/scripts/catalog_seed_data.json`, not RAG over these brochures.
+> The PDFs are kept here only in case that RAG approach gets revisited.
 
 ---
 
@@ -133,20 +130,6 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 
 The app is available at [http://localhost:3000](http://localhost:3000). The browser connects directly to `agent-service`'s WebSocket — there is no Next.js API proxy route.
 
-### 3. `services/ingestion` — populate the course catalog's source PDFs (optional)
-
-This pipeline is independent from `agent-service`'s own catalog seeding (`scripts/seed_catalog.py`) — it's the original PDF-brochure-to-pgvector pipeline from the project's first unit, still on AWS/Ollama and not re-platformed to Azure.
-
-```bash
-cd services/ingestion
-docker compose up -d            # local pgvector on port 5433
-cp .env.example .env
-pip install -r requirements.txt
-python cli.py                   # reads PDFs from knowledge_source/
-```
-
-Set `INGESTION_ENV=production` to switch to AWS adapters (S3 + Bedrock) — see the env vars in `services/ingestion/.env.example`.
-
 ---
 
 ## Running tests
@@ -157,9 +140,6 @@ cd services/agent-service && pytest
 
 # chat frontend (Vitest)
 cd apps/chat && npm test
-
-# ingestion pipeline (pytest)
-cd services/ingestion && pip install -r requirements-dev.txt && pytest
 ```
 
 ---
