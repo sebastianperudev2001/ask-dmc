@@ -11,32 +11,11 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from src.domain.models import RecommendationCandidate, RecommendationRequest
+from src.domain.models import RecommendationCandidate
 
 MAX_TEXT_FIELD_LENGTH = 2000
 MAX_BUDGET = Decimal("1000000")
 MAX_DURATION_WEEKS = 104  # 2 years
-
-
-class RecommendationRequestMessage(BaseModel):
-    type: Literal["recommendation_request"]
-    budget: Decimal = Field(gt=0, le=MAX_BUDGET)
-    max_duration_weeks: int = Field(gt=0, le=MAX_DURATION_WEEKS)
-    professional_background: str = Field(min_length=1, max_length=MAX_TEXT_FIELD_LENGTH)
-    desired_stack: str = Field(min_length=1, max_length=MAX_TEXT_FIELD_LENGTH)
-
-    def to_domain(self) -> RecommendationRequest:
-        return RecommendationRequest(
-            budget=self.budget,
-            max_duration_weeks=self.max_duration_weeks,
-            professional_background=self.professional_background,
-            desired_stack=self.desired_stack,
-        )
-
-
-class RelaxFiltersResponseMessage(BaseModel):
-    type: Literal["relax_filters_response"]
-    confirm: bool
 
 
 class CandidateSummary(BaseModel):
@@ -68,23 +47,6 @@ class RecommendationDeltaMessage(BaseModel):
 class RecommendationDoneMessage(BaseModel):
     type: Literal["recommendation_done"] = "recommendation_done"
     candidates: list[CandidateSummary]
-
-
-class RelaxFiltersOfferMessage(BaseModel):
-    type: Literal["relax_filters_offer"] = "relax_filters_offer"
-    message: str
-    relaxed_max_duration_weeks: int
-    relaxed_budget: Decimal
-
-
-class NoExactMatchShowingAllMessage(BaseModel):
-    type: Literal["no_exact_match_showing_all"] = "no_exact_match_showing_all"
-    reason: str = "no_courses_match_criteria"
-
-
-class NoRecommendationMessage(BaseModel):
-    type: Literal["no_recommendation"] = "no_recommendation"
-    reason: str
 
 
 # ── Incremento 2 — chat conversacional + tool-calling + pago (business-logic-model.md Sección 9) ──

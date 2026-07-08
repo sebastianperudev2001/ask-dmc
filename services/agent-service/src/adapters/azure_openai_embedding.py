@@ -1,5 +1,5 @@
 """AzureOpenAIEmbeddingService — text-embedding-3-small (1536 dims), used both for the
-catalog seed (scripts/seed_catalog.py) and per-request ProfileQuery (websocket_handler.py).
+catalog seed (scripts/seed_catalog.py) and per-request ProfileQuery (chat_agent_client.py).
 Wrapped in RetryPolicy (PATTERN-01); raises EmbeddingServiceUnavailableError once retries
 are exhausted (mapped to the `embedding_service_unavailable` WS error)."""
 from __future__ import annotations

@@ -4,13 +4,14 @@ Backend de recomendación de cursos por perfil — `unit-2` redefinida sobre Azu
 `aidlc-docs/aidlc-state.md`, DIV-10).
 
 - **Incremento 1**: catálogo de cursos + recomendación por perfil (filtros duros de
-  presupuesto/duración + ranking semántico vía pgvector + composición de la respuesta
-  por un agente de Azure AI Foundry). Endpoint `/ws/recommendation` — ver
-  `src/api/websocket_handler.py` (dejado intacto como referencia histórica; ya no
-  enrutado desde `main.py`).
-- **Incremento 2**: chat conversacional libre con tool-calling (`/ws/chat`, reemplaza
-  `/ws/recommendation`), pago real vía Mercado Pago Checkout Pro, webhook de
-  confirmación, persistencia de leads en Postgres.
+  presupuesto/duración + ranking semántico vía pgvector). Su endpoint dedicado
+  (`/ws/recommendation`) y el agente de un solo turno que lo componía fueron
+  eliminados tras el incremento 2 (código muerto: ya no se enrutaban desde
+  `main.py`); la lógica de matching sobrevive dentro de `RecommendationOrchestrator`,
+  reutilizada como la tool `get_course_recommendations`.
+- **Incremento 2 (activo)**: chat conversacional libre con tool-calling (`/ws/chat`),
+  pago real vía Mercado Pago Checkout Pro, webhook de confirmación, persistencia de
+  leads en Postgres.
 
 No implementa (todavía): notificación activa de escalación a humano (DIV-12, solo se
 persiste el flag), Backoffice Portal, rate limiting (SECURITY-11, riesgo aceptado),
@@ -95,17 +96,21 @@ TEST_DATABASE_URL=postgresql://postgres:demo@localhost:5434/agent_service_test p
 src/
   domain/       — modelos (Course, Lead, ConversationSession, ConversationMessage, ...),
                   RecommendationOrchestrator, lead_scoring.py (BR-17), pending_tool_calls.py (PATTERN-15)
-  ports/        — Protocols: CourseRepository, EmbeddingService, RecommendationAgentClient,
-                  LeadRepository, ConversationMessageRepository
-  adapters/     — Postgres, Azure OpenAI, Foundry, Key Vault, RetryPolicy, Mercado Pago (client + firma),
-                  ChatAgentClient (Agent + 3 tools)
+  ports/        — Protocols: CourseRepository, EmbeddingService, LeadRepository,
+                  ConversationMessageRepository
+  adapters/     — Postgres, Azure OpenAI, RetryPolicy, Mercado Pago (client + firma),
+                  ChatAgentClient (Agent + 3 tools: collect_profile_data,
+                  get_course_recommendations, create_payment_link)
   api/          — ChatWebSocketHandler (/ws/chat), MercadoPagoWebhookHandler, schemas Pydantic
-                  (websocket_handler.py = incremento 1, histórico, no enrutado)
 migrations/     — 001 (courses + pgvector), 002 (leads + conversation_sessions), 003 (conversation_messages)
 scripts/        — seed_catalog.py, manual_chat_check.py, simulate_mercadopago_webhook.py
 tests/unit/     — dominio + adaptadores (property-based con Hypothesis)
 tests/integration/ — flujo WS completo y flujo de webhook, con fakes
 ```
+
+Secrets en producción (Mercado Pago, DB URL, etc.) llegan como variables de entorno
+inyectadas por Container Apps directamente desde Key Vault (`infra/agent-service/main.tf`) —
+no hay un cliente de Key Vault a nivel de aplicación.
 
 ## Provisionar Azure AI Foundry
 

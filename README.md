@@ -1,56 +1,50 @@
 # ask-dmc
 
-AI-powered sales agent for [DMC Institute](https://dmc.pe). The agent qualifies leads conversationally, recommends courses from a RAG-indexed PDF knowledge base, and generates Mercado Pago payment links — all within an embeddable chat widget backed by a FastAPI + pgvector stack.
+AI-powered sales agent for [DMC Institute](https://dmc.pe). The agent chats freely with visitors to qualify them as leads, recommends real courses from a pgvector-indexed catalog, and generates Mercado Pago payment links — all through a WebSocket chat widget backed by an Azure AI Foundry agent.
+
+> This is a demo/course project. It has gone through a couple of architecture pivots — see `aidlc-docs/aidlc-state.md` (Known Divergences table) for the full history if you're wondering why something looks different from an older commit or doc.
 
 ---
 
 ## Architecture
-xd
+
 ```
-┌─────────────────────────────────────────────────────────┐
-│                       ask-dmc                           │
-│                                                         │
-│  apps/                                                  │
-│  └── chat/          Next.js 15 — chat widget + admin    │
-│                                                         │
-│  services/                                              │
-│  ├── api/           FastAPI — RAG query endpoint        │
-│  └── ingestion/     PDF ingestion pipeline              │
-└─────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                            ask-dmc                                │
+│                                                                    │
+│  apps/                                                            │
+│  └── chat/            Next.js 15 — WebSocket chat widget          │
+│                                                                    │
+│  services/                                                        │
+│  ├── agent-service/   FastAPI + Azure AI Foundry agent            │
+│  │                    (tool-calling, Postgres, Mercado Pago)      │
+│  └── ingestion/       PDF → embeddings → pgvector pipeline        │
+│                                                                    │
+│  infra/agent-service/ Terraform (Azure Container Apps + Postgres) │
+└──────────────────────────────────────────────────────────────────┘
 
 Request flow:
-  Browser → Next.js /api/ask → FastAPI /ask
-                                  ├── Ollama embeddings
-                                  ├── pgvector similarity search
-                                  └── Ollama LLM (streaming)
+  Browser ──WS──> agent-service /ws/chat
+                     │
+                     ├── ChatAgentClient (Azure AI Foundry "dmc-sales-advisor" agent)
+                     │     ├── tool: collect_profile_data        (pauses for a form widget)
+                     │     ├── tool: get_course_recommendations  (pgvector similarity search)
+                     │     └── tool: create_payment_link         (Mercado Pago Checkout Pro)
+                     │
+                     └── Postgres (courses, leads, conversation_sessions, conversation_messages)
+
+  Mercado Pago ──webhook──> agent-service /webhooks/mercadopago (confirms payment, updates Lead)
 ```
 
 | Layer | Technology |
 |---|---|
-| Frontend | Next.js 15, React 19, Tailwind CSS 4 |
-| API backend | FastAPI, Uvicorn |
-| Vector store | PostgreSQL 16 + pgvector (Docker) |
-| Embeddings | Ollama `Multilingual-E5-Large-Instruct` (local) / AWS Bedrock Titan (prod) |
-| LLM | Ollama `gemma4` (local) / Claude via Bedrock (prod) |
-| Knowledge base | PDF brochures parsed and chunked by the ingestion service |
-
----
-
-## Prerequisites
-
-| Tool | Version |
-|---|---|
-| Node.js | >= 18 |
-| Python | >= 3.11 |
-| Docker + Docker Compose | any recent version |
-| Ollama | >= 0.3 |
-
-Install and pull the required Ollama models:
-
-```bash
-ollama pull Multilingual-E5-Large-Instruct
-ollama pull gemma4
-```
+| Frontend | Next.js 15, React 19, Tailwind CSS 4, Effect (WsChatService) |
+| Agent backend | FastAPI, Azure AI Foundry Persistent Agent, Microsoft Agent Framework |
+| Embeddings (agent-service) | Azure OpenAI `text-embedding-3-small` |
+| Vector store | PostgreSQL 16 + pgvector |
+| Payments | Mercado Pago Checkout Pro |
+| Ingestion pipeline | Ollama (local) / AWS Bedrock + S3 (production) — stays on AWS, not re-platformed |
+| Infra | Terraform → Azure Container Apps, Azure Database for PostgreSQL, Key Vault |
 
 ---
 
@@ -59,216 +53,117 @@ ollama pull gemma4
 ```
 ask-dmc/
 ├── apps/
-│   └── chat/                   # Next.js app (widget + backoffice)
-│       ├── app/
-│       │   ├── api/ask/        # Proxy route to FastAPI
-│       │   ├── layout.tsx
-│       │   └── page.tsx
-│       ├── components/         # React UI components
-│       ├── hooks/              # useChat, useDarkMode
-│       ├── lib/                # API client
-│       ├── types/
-│       └── package.json
+│   └── chat/                        # Next.js chat widget
+│       ├── app/                     # page.tsx, layout.tsx
+│       ├── components/              # ChatApp, Sidebar, ProfileDataWidget,
+│       │                            # CourseRecommendationCard, PaymentLinkButton, ...
+│       ├── hooks/useChat.ts
+│       ├── lib/                     # ChatService (interface) + WsChatService (Effect impl)
+│       └── types/
 │
 ├── services/
-│   ├── api/                    # FastAPI RAG backend
-│   │   ├── main.py
-│   │   ├── src/config.py
-│   │   ├── requirements.txt
-│   │   └── .env.example
+│   ├── agent-service/                # Azure AI Foundry sales agent — see its own README
+│   │   ├── main.py                   # wires WS /ws/chat, POST /webhooks/mercadopago,
+│   │   │                             # GET /conversations, GET /conversations/{id}/messages
+│   │   ├── src/
+│   │   │   ├── domain/                # Course, Lead, RecommendationOrchestrator, lead_scoring
+│   │   │   ├── ports/                 # Protocols (CourseRepository, EmbeddingService, ...)
+│   │   │   ├── adapters/              # Postgres, Azure OpenAI, ChatAgentClient (+ 3 tools),
+│   │   │   │                         # Mercado Pago client + webhook signature verification
+│   │   │   └── api/                   # ChatWebSocketHandler, MercadoPagoWebhookHandler
+│   │   ├── migrations/                # 001 courses+pgvector, 002 leads/sessions, 003 messages
+│   │   └── scripts/                   # seed_catalog.py, manual_chat_check.py, ...
 │   │
-│   └── ingestion/              # PDF ingestion pipeline
-│       ├── cli.py              # Entry point
-│       ├── src/
-│       │   ├── pipeline/       # PDF parser, embeddings, orchestrator
-│       │   ├── infrastructure/ # pgvector, S3, Ollama/Bedrock adapters
-│       │   └── ports/          # Abstractions (embeddings, LLM, storage)
-│       ├── migrations/         # SQL schema (auto-applied by Docker)
-│       ├── docker-compose.yml  # pgvector database
-│       ├── requirements.txt
-│       └── .env.example
+│   └── ingestion/                    # PDF ingestion pipeline (unchanged since inception)
+│       ├── cli.py                    # Entry point
+│       ├── src/pipeline/             # PDF parser, embeddings, orchestrator
+│       ├── src/infrastructure/       # pgvector, S3, Ollama/Bedrock adapters
+│       ├── migrations/               # SQL schema for the ingestion's own pgvector table
+│       └── docker-compose.yml        # local pgvector database
 │
-└── knowledge_source/           # Place PDF brochures here
+├── infra/agent-service/              # Terraform: Container App, Postgres, Key Vault
+│
+└── knowledge_source/                 # Source PDF brochures for the ingestion pipeline
 ```
 
 ---
 
 ## Local setup
 
-### 1. Start the vector database
+### 1. `services/agent-service` — the sales agent (main service)
+
+Full instructions live in [`services/agent-service/README.md`](services/agent-service/README.md). Short version:
 
 ```bash
-cd services/ingestion
-docker compose up -d
-```
+cd services/agent-service
+uv sync --all-extras            # or: pip install -e ".[dev]"
+cp .env.example .env            # fill in DATABASE_URL, AZURE_OPENAI_ENDPOINT,
+                                 # FOUNDRY_PROJECT_ENDPOINT, MERCADOPAGO_ACCESS_TOKEN,
+                                 # MERCADOPAGO_WEBHOOK_SECRET
+az login                        # local dev uses DefaultAzureCredential -> Azure CLI
 
-This starts a PostgreSQL container with the pgvector extension on port **5433**. The migration in `migrations/001_create_brochure_chunks.sql` runs automatically on first start, creating the `brochure_chunks` table and HNSW index.
+psql "$DATABASE_URL" -f migrations/001_create_courses.sql
+psql "$DATABASE_URL" -f migrations/002_create_leads_and_sessions.sql
+psql "$DATABASE_URL" -f migrations/003_create_conversation_messages.sql
+python -m scripts.seed_catalog  # embeds and loads the course catalog
 
-### 2. Run the ingestion pipeline
-
-The pipeline reads PDFs from `knowledge_source/`, chunks and embeds them, then stores vectors in pgvector.
-
-```bash
-cd services/ingestion
-
-# Copy and configure environment
-cp .env.example .env
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run the pipeline
-python cli.py
-```
-
-**Ingestion `.env` reference:**
-
-```dotenv
-INGESTION_ENV=local          # local | production
-INGESTION_WORKERS=4
-
-# PostgreSQL
-VECTOR_DB_URL=postgresql://ask_dmc:ask_dmc@localhost:5433/ask_dmc
-
-# Ollama (local mode)
-LOCAL_KNOWLEDGE_DIR=knowledge_source
-LOCAL_REPORTS_DIR=reports
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_EMBEDDINGS_MODEL=Multilingual-E5-Large-Instruct
-KEYWORDS_MODEL=gemma3:4b
-```
-
-Re-run the pipeline whenever new PDFs are added. To wipe and re-index from scratch, the migration `002_truncate_brochure_chunks.sql` truncates the table.
-
-### 3. Start the FastAPI backend
-
-```bash
-cd services/api
-
-# Copy and configure environment
-cp .env.example .env
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Start the server (reload for development)
 uvicorn main:app --reload --port 8000
 ```
 
-**API `.env` reference:**
+- WebSocket (chat): `ws://localhost:8000/ws/chat`
+- Payment webhook: `POST http://localhost:8000/webhooks/mercadopago`
+- Message rehydration: `GET http://localhost:8000/conversations/{conversation_id}/messages`
+- Health check: `GET http://localhost:8000/health`
 
-```dotenv
-VECTOR_DB_URL=postgresql://ask_dmc:ask_dmc@localhost:5433/ask_dmc
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_EMBEDDINGS_MODEL=Multilingual-E5-Large-Instruct
-OLLAMA_LLM_MODEL=gemma4
-RAG_TOP_K=5
-```
+Requires access to an Azure OpenAI resource (embeddings) and an Azure AI Foundry project (agent) — see [`services/agent-service/docs/provisioning-foundry-azd.md`](services/agent-service/docs/provisioning-foundry-azd.md) for provisioning the Foundry agent itself (not covered by the Terraform in `infra/agent-service/`).
 
-Verify the API is healthy:
-
-```bash
-curl http://localhost:8000/health
-# {"status":"ok"}
-```
-
-### 4. Start the Next.js frontend
+### 2. `apps/chat` — the frontend
 
 ```bash
 cd apps/chat
-
-# Create the environment file
-echo "API_URL=http://localhost:8000" > .env.local
-
-# Install dependencies
 npm install
-
-# Start the dev server
 npm run dev
 ```
 
-**Chat `.env.local` reference:**
-
+`.env.local`:
 ```dotenv
-API_URL=http://localhost:8000
+NEXT_PUBLIC_WS_URL=ws://localhost:8000/ws/chat
+NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
-The app is available at [http://localhost:3000](http://localhost:3000).
+The app is available at [http://localhost:3000](http://localhost:3000). The browser connects directly to `agent-service`'s WebSocket — there is no Next.js API proxy route.
 
----
+### 3. `services/ingestion` — populate the course catalog's source PDFs (optional)
 
-## Environment variables summary
+This pipeline is independent from `agent-service`'s own catalog seeding (`scripts/seed_catalog.py`) — it's the original PDF-brochure-to-pgvector pipeline from the project's first unit, still on AWS/Ollama and not re-platformed to Azure.
 
-| Service | Variable | Description | Default |
-|---|---|---|---|
-| `apps/chat` | `API_URL` | FastAPI base URL | — |
-| `services/api` | `VECTOR_DB_URL` | PostgreSQL connection string | — |
-| `services/api` | `OLLAMA_BASE_URL` | Ollama base URL | `http://localhost:11434` |
-| `services/api` | `OLLAMA_EMBEDDINGS_MODEL` | Embeddings model name | `Multilingual-E5-Large-Instruct` |
-| `services/api` | `OLLAMA_LLM_MODEL` | LLM model name | `gemma4` |
-| `services/api` | `RAG_TOP_K` | Number of chunks retrieved per query | `5` |
-| `services/ingestion` | `INGESTION_ENV` | Runtime environment (`local`/`production`) | `local` |
-| `services/ingestion` | `INGESTION_WORKERS` | Parallel ingestion workers | `4` |
-| `services/ingestion` | `VECTOR_DB_URL` | PostgreSQL connection string | — |
-| `services/ingestion` | `LOCAL_KNOWLEDGE_DIR` | Directory containing source PDFs | `knowledge_source` |
-| `services/ingestion` | `OLLAMA_BASE_URL` | Ollama base URL | `http://localhost:11434` |
-| `services/ingestion` | `OLLAMA_EMBEDDINGS_MODEL` | Embeddings model name | `Multilingual-E5-Large-Instruct` |
-| `services/ingestion` | `KEYWORDS_MODEL` | Model used for keyword extraction | `gemma3:4b` |
-
----
-
-## API reference
-
-### `POST /ask`
-
-Accepts a question, retrieves the top-K relevant chunks from pgvector, and streams the LLM response.
-
-**Request body:**
-```json
-{ "question": "¿Cuánto cuesta el diploma de Data Scientist?" }
+```bash
+cd services/ingestion
+docker compose up -d            # local pgvector on port 5433
+cp .env.example .env
+pip install -r requirements.txt
+python cli.py                   # reads PDFs from knowledge_source/
 ```
 
-**Response:** `text/plain` streamed token by token.
-
-**Response headers:**
-- `X-Sources` — JSON array of the retrieved chunks used as context:
-  ```json
-  [{"course": "...", "section": "...", "distance": 0.1234}]
-  ```
-
-### `GET /health`
-
-Returns `{"status": "ok"}` when the service and database connection are healthy.
+Set `INGESTION_ENV=production` to switch to AWS adapters (S3 + Bedrock) — see the env vars in `services/ingestion/.env.example`.
 
 ---
 
 ## Running tests
 
-**Frontend (Vitest):**
 ```bash
-cd apps/chat
-npm test
-```
+# agent-service (pytest)
+cd services/agent-service && pytest
 
-**Ingestion pipeline (pytest):**
-```bash
-cd services/ingestion
-pip install -r requirements-dev.txt
-pytest
+# chat frontend (Vitest)
+cd apps/chat && npm test
+
+# ingestion pipeline (pytest)
+cd services/ingestion && pip install -r requirements-dev.txt && pytest
 ```
 
 ---
 
-## Production notes
+## Infrastructure
 
-Set `INGESTION_ENV=production` to switch the ingestion pipeline to AWS adapters:
-
-| Variable | Description |
-|---|---|
-| `S3_BUCKET` | S3 bucket containing PDF brochures |
-| `S3_BROCHURES_PREFIX` | Key prefix for brochure PDFs |
-| `S3_REPORTS_PREFIX` | Key prefix for ingestion reports |
-| `BEDROCK_EMBEDDINGS_MODEL` | Bedrock model ID (e.g. `amazon.titan-embed-text-v2:0`) |
-| `KEYWORDS_MODEL` | Bedrock model for keyword extraction (e.g. `claude-haiku-4-5`) |
-
-AWS credentials must be available in the environment (IAM role, `AWS_PROFILE`, or `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`).
+`infra/agent-service/` is Terraform for the Azure resources backing `agent-service`: Container Apps, Azure Database for PostgreSQL Flexible Server, and Key Vault (secrets injected as Container Apps env vars — there's no in-app Key Vault client). The Azure AI Foundry project/agent itself is provisioned separately via `azd` (Terraform's `azurerm` provider support for that resource type is still catching up) — see `services/agent-service/docs/provisioning-foundry-azd.md`.

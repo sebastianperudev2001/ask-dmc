@@ -1,9 +1,5 @@
 from __future__ import annotations
 
-from typing import AsyncIterator
-
-from src.domain.models import RecommendationBranch, RecommendationCandidate
-
 
 class FakeEmbeddingService:
     def __init__(self, embedding: tuple[float, ...] = (1.0, 0.0, 0.0)) -> None:
@@ -11,20 +7,6 @@ class FakeEmbeddingService:
 
     async def embed(self, text: str) -> tuple[float, ...]:
         return self._embedding
-
-
-class FakeRecommendationAgentClient:
-    def __init__(self, deltas: list[str] | None = None) -> None:
-        self._deltas = deltas or ["Basado en tu perfil, ", "te recomiendo este programa."]
-
-    async def stream_recommendation(
-        self,
-        candidates: list[RecommendationCandidate],
-        profile_text: str,
-        branch: RecommendationBranch,
-    ) -> AsyncIterator[str]:
-        for delta in self._deltas:
-            yield delta
 
 
 # ── Incremento 2 — chat conversacional + tool-calling + pago ────────────────────────
