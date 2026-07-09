@@ -4,7 +4,7 @@
 - **Project Name**: DMC Sales Agent
 - **Project Type**: Greenfield
 - **Start Date**: 2026-04-23T00:00:00Z
-- **Current Stage**: CONSTRUCTION - agent-service incremento 2 + apps/chat - Build and Test COMPLETED (3 rondas de verificación E2E real: 2 rondas de bugs corregidos + 1 ronda de feature nueva — rehidratación de mensajes al recargar). Pendiente: aprobación final del usuario; pago Mercado Pago sin probar (sin credenciales)
+- **Current Stage**: INCEPTION - BackOffice lead qualification view - Requirements Analysis COMPLETED, awaiting user approval. Previous initiative (CONSTRUCTION - agent-service incremento 2 + apps/chat) Build and Test COMPLETED (3 rondas de verificación E2E real: 2 rondas de bugs corregidos + 1 ronda de feature nueva — rehidratación de mensajes al recargar). Pendiente: aprobación final del usuario; pago Mercado Pago sin probar (sin credenciales)
 - **Platform**: Azure (pivote desde AWS el 2026-07-05 — ver DIV-10). unit-1 (ingestion-pipeline) fue eliminada el 2026-07-07 tras confirmarse que nunca quedó conectada a `agent-service` — ver DIV-15.
 
 ## Workspace State
@@ -103,6 +103,15 @@
   - Ronda 6 (bug reportado por el usuario: `ParseError` en el frontend tras enviar el widget — `NaN` en `similarity_score`) — causa raíz doble: (1) `TEST_DATABASE_URL` compartía la MISMA base Postgres que el demo durante toda la sesión, y el `test_p6_pgvector_ranking_matches_numpy_oracle` (hallazgo de la Ronda 5) truncaba `courses` en cada corrida de la suite, dejando el catálogo real reducido a un curso sintético con embedding cero; (2) un embedding de magnitud cero hace indefinida la distancia coseno de pgvector → `similarity_score = NaN`, y `json.dumps` emite el literal `NaN` (inválido para JSON estándar), rechazado por `JSON.parse` del navegador. Fix de datos: base de test aislada (`agent_service_test`, mismo contenedor Docker, migraciones aplicadas) para que los tests dejen de poder dañar el catálogo del demo; catálogo real re-sembrado (`scripts.seed_catalog`). Fix de código (TDD): `CandidateSummary.from_candidate` sanea `NaN` a `0.0` antes de serializar (nuevo test `tests/unit/test_schemas.py`). Verificado con Playwright real: envío del widget sin errores de consola. Suite tras el fix: 61/62 backend (único fallo: el mismo Hypothesis preexistente, ya inofensivo para el catálogo real).
   - Pago (Mercado Pago) explícitamente no probado — sin credenciales sandbox (decisión del usuario). Sin despliegue a Azure ni `terraform plan/apply` — alcance exclusivamente local. Detalle completo en `aidlc-docs/construction/build-and-test/build-and-test-summary.md` y `business-logic-model.md` Secciones 14-18.
   - Ronda 7 (feature solicitada tras explicar que `score_lead()` (BR-17) existía pero nunca se invocaba desde el flujo real — gap encontrado durante una pregunta exploratoria del usuario, no un bug reportado) — nuevo BR-17b: piso de engagement monotónico sobre `Lead.score` basado en conteo de mensajes del usuario (5+ → `warm`, 10+ → `hot`) y en completar el formulario de perfil (`warm`), combinado con `score_lead()` tomando siempre el máximo, sin bajarlo nunca. Implementado con TDD (RED-GREEN verificado en cada pieza): `engagement_floor`/`apply_score_floor` puras en `src/domain/lead_scoring.py`; `ChatAgentClient.record_user_message()`/`_apply_engagement_floor()` (invocado tras cada mensaje de usuario y tras `_collect_profile_data`); `ChatWebSocketHandler` llama a `record_user_message()` una vez por turno. Suite verificada sin regresiones: 64/64 backend (12 skipped), +13 tests nuevos. Pendiente sin cambios: extracción real de `motivation`/`purchase_intent`/`has_complete_data` desde la conversación libre (ya documentado como gap futuro en `business-logic-summary-increment2.md`) — BR-17b es un complemento pragmático, no la reemplaza.
+
+### 🔵 INCEPTION — BackOffice lead qualification view
+- [x] Workspace Detection — reutilizado (proyecto brownfield ya establecido vía AI-DLC)
+- [x] Requirements Analysis — COMPLETED (2026-07-09, 2 rondas: verificación inicial + follow-up de ambigüedad/confirmación) — `aidlc-docs/inception/requirements/backoffice-requirements.md`. Awaiting user approval.
+  - Scope: nueva app `apps/backoffice` (Next.js, standalone), kanban read-only (Hot/Warm/Cold) sobre `Lead`, tiempo real vía nuevo canal WebSocket, nuevo `list_leads`/`GET /leads` en `agent-service`. Sin auth en esta iteración — seguimiento en [GitHub issue #18](https://github.com/sebastianperudev2001/ask-dmc/issues/18). Identidad visual separada de `apps/chat`, alineada a brand guidelines de dmc.pe, vía skill `frontend-design` en Code Generation.
+- [ ] User Stories — pendiente de evaluación (siguiente paso)
+- [ ] Workflow Planning — pendiente
+- [ ] Application Design — pendiente de evaluación
+- [ ] Units Generation — pendiente de evaluación
 
 ### OPERATIONS PHASE
 - [ ] Operations — PLACEHOLDER
