@@ -40,6 +40,46 @@
 
 ---
 
+## Requirements Analysis — BackOffice: aprobado
+**Timestamp**: 2026-07-09T00:00:00Z
+**User Input**: "Approved"
+**AI Response**: Requirements Analysis aprobado. Commit creado (`1240623`, "docs(aidlc): approve Requirements Analysis for BackOffice lead qualification view") por nueva preferencia del usuario de commitear en cada aprobación de etapa/documento del flujo AI-DLC (guardada en memoria persistente). Procediendo a User Stories (nueva funcionalidad de cara a un usuario/persona nuevo — staff interno de DMC — cumple criterio "ALWAYS Execute" de la etapa).
+**Context**: Requirements Analysis COMPLETED and APPROVED. Avanzando a User Stories.
+
+---
+
+## User Stories — BackOffice: assessment + plan presentado
+**Timestamp**: 2026-07-09T00:00:00Z
+**User Input**: N/A
+**AI Response**: Creado `aidlc-docs/inception/plans/backoffice-user-stories-assessment.md` — decisión: ejecutar User Stories (criterio "ALWAYS Execute": nuevo persona/usuario staff DMC, primera superficie interna del sistema). Creado `aidlc-docs/inception/plans/backoffice-story-generation-plan.md` con 4 preguntas de clarificación (persona única vs. múltiples roles; objetivo de negocio de la vista; enfoque de desglose de historias — recomendado feature-based; formato de criterios de aceptación) más checklist de artefactos obligatorios (`backoffice-personas.md`, `backoffice-stories.md`, INVEST, criterios de aceptación, mapeo persona↔historia).
+**Context**: User Stories, Part 1 (Planning) — GATE: esperando respuestas a las 4 preguntas antes de aprobar el plan.
+
+---
+
+## User Stories — BackOffice: respuesta a Q2 revela expansión de alcance significativa
+**Timestamp**: 2026-07-09T00:00:00Z
+**User Input**: "Done" — respuestas en `backoffice-story-generation-plan.md`: Q1=A (persona única); Q2="The idea is to implement another agent that allows them to draft messages and send them over WhatsApp or send email automatically with the information recollected. Everything should be personalized and contextual based on the data collected in the conversation. Also, staff should get notified when a lead is created and needs attention."; Q3=A (feature-based); Q4=A (Gherkin)
+**AI Response**: Analizadas las respuestas (Step 9, MANDATORY). Q1/Q3/Q4 sin ambigüedad. Q2 no es ambigua pero responde algo distinto a lo preguntado: en vez de un objetivo de negocio para la vista ya aprobada (read-only), describe una funcionalidad nueva y significativamente mayor — un agente de outreach automatizado (redacción/envío de WhatsApp/email personalizado según la conversación) + notificaciones al staff cuando se crea un lead. Esto excede el alcance ya aprobado en `backoffice-requirements.md` (FR-1..FR-8, explícitamente read-only, sin mensajería saliente ni notificaciones) y tiene precedente directo de diferimiento en este proyecto (DIV-12: notificación de escalación diferida en agent-service incremento 2 por falta de canal decidido). Creado `backoffice-story-generation-clarification-questions.md`: Clarification Q1 (¿incluir outreach+notificaciones en este incremento, dividir, o solo notificaciones ahora?), Clarification Q2 (si se difiere, ¿tracking vía GitHub issue como #18, o solo nota en requirements.md?), y re-pregunta la Q2 original (objetivo de negocio de la vista ya aprobada, independiente de la decisión de alcance).
+**Context**: User Stories, Part 1, Step 9-10 (MANDATORY follow-up ante respuesta que expande alcance) — GATE: esperando resolución antes de aprobar el plan de historias. No se ha modificado `backoffice-requirements.md` todavía — cualquier expansión de alcance requeriría actualizarlo primero.
+
+---
+
+## User Stories — BackOffice: decisión de alcance = incluir todo ahora (C)
+**Timestamp**: 2026-07-09T00:00:00Z
+**User Input**: "Answered" — `backoffice-story-generation-clarification-questions.md`: Clarification Q1=C (incluir agente de outreach + notificaciones en este mismo incremento, expandir requirements.md); Clarification Q2=A (respondida igual aunque la instrucción decía "skip if C" — no aplica, nada se difiere); Q2 original re-respondida=B ("related to speed to reduce manual work and also serve as human in the loop")
+**AI Response**: Verificado el código antes de generar más preguntas: `Lead` (`domain/models.py`) y `collect_profile_data` (`adapters/chat_agent_client.py`) NO capturan número de teléfono — gap real para WhatsApp, no solo detalle de diseño. Identificado precedente directo: DIV-12 ya difirió "notificar a humano en escalación" en agent-service incremento 2 por no tener canal de notificación decidido en Azure — el mismo problema aplica aquí. Detectada tensión sin resolver en la respuesta original del usuario ("reduce manual work" vs. "human in the loop" — grados de automatización opuestos). Creado `backoffice-outreach-clarification-questions.md` con 5 preguntas: (1) grado de human-in-the-loop antes de enviar un mensaje, (2) trigger del agente de outreach (score=hot / lead creado / on-demand), (3) alcance de canal dado el gap de teléfono (email-only vs. agregar teléfono ahora), (4) disponibilidad real de credenciales de WhatsApp Business API (mismo patrón que Mercado Pago sin credenciales), (5) canal de notificación al staff (in-app reutilizando el WS ya planeado vs. email, dado el precedente sin resolver de DIV-12).
+**Context**: User Stories, Part 1 — GATE: expansión de alcance aceptada en principio (C), pero con ambigüedades técnicas reales sin resolver (Step 9/10 MANDATORY) antes de poder amender `backoffice-requirements.md` con las nuevas FRs del agente de outreach y notificaciones.
+
+---
+
+## User Stories — BackOffice: outreach/notificaciones resueltas, requirements.md amendado
+**Timestamp**: 2026-07-09T00:00:00Z
+**User Input**: "answered" — `backoffice-outreach-clarification-questions.md`: Q1=A (staff revisa y da click en "Send", nada sale sin acción humana); Q2="1) When it's hot it's automatic, 2) On demand" (auto-draft al llegar a hot + trigger on-demand para cualquier lead); Q3=A (solo email este incremento, "create a ticket for whatsapp"); Q4=B (sin credenciales de WhatsApp, "ticket for this"); Q5=A (notificación solo in-app, reutilizando el WS ya planeado)
+**AI Response**: Sin contradicciones — Q1+Q2 combinados son coherentes (auto-draft en trigger hot O on-demand, pero el envío siempre requiere click explícito de "Send"). Creado issue de GitHub para WhatsApp — https://github.com/sebastianperudev2001/ask-dmc/issues/19 ("Add WhatsApp outreach channel...") cubriendo el gap de teléfono + credenciales, combinando lo pedido en Q3 y Q4 en un solo ticket (mismo bloqueador). Amendado `backoffice-requirements.md`: FR-5 reescrito para aclarar que "read-only" aplica al record `Lead`, no a la nueva capacidad de outreach; agregadas FR-9 a FR-14 (agente de outreach: auto-draft en `hot`, trigger on-demand, gate humano obligatorio antes de enviar, alcance email-only con WhatsApp diferido a issue #19; notificación in-app reutilizando el canal WS de FR-6/FR-8, con supuesto explícito documentado —"actionable" = mismo trigger que el auto-draft— pendiente de confirmación del usuario); agregadas NFR-5 (selección de proveedor de email diferida a NFR Requirements, mismo patrón que DIV-12) y NFR-6 (referencia a issue #19). Actualizado `backoffice-story-generation-plan.md` con las respuestas finales consolidadas y el checklist de artefactos ampliado (historias para FR-9/10, FR-11, FR-12, FR-14 además de las originales).
+**Context**: User Stories, Part 1 — todas las ambigüedades resueltas. Antes de generar las historias, se presenta el plan actualizado (incluyendo el `requirements.md` amendado) para aprobación explícita, dado el tamaño de la expansión de alcance.
+
+---
+
 ## New Request — nomic-embed-text Asymmetric Prefix Fix
 **Timestamp**: 2026-05-03T00:00:00Z
 **User Input**: "Okay, using AI-SDLC fix the prefix issue. I understand it's basically adding the prefix and document it"
