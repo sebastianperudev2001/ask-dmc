@@ -58,8 +58,8 @@ C) Other (please describe after [Answer]: tag below)
 
 ## Mandatory Story Artifacts (Plan Checklist)
 
-- [ ] Generate `aidlc-docs/inception/user-stories/backoffice-personas.md` with the "DMC Sales Staff" persona, motivation = prioritizing/triaging leads quickly while staying the human checkpoint on outreach
-- [ ] Generate `aidlc-docs/inception/user-stories/backoffice-stories.md`, feature-based, one story per: FR-2 (board view), FR-3 (lead cards), FR-4 (detail popup), FR-6 (real-time board updates), FR-9/FR-10 (auto-draft on hot), FR-11 (on-demand draft), FR-12 (review-and-send gate), FR-14 (in-app notification). FR-5 (read-only boundary) and FR-13 (email-only/WhatsApp deferred) captured as explicit scope notes within the relevant stories rather than as standalone stories.
-- [ ] Each story follows INVEST criteria (Independent, Negotiable, Valuable, Estimable, Small, Testable)
-- [ ] Each story includes Given/When/Then acceptance criteria
-- [ ] Map the persona to each story explicitly
+- [x] Generate `aidlc-docs/inception/user-stories/backoffice-personas.md` with the "DMC Sales Staff" persona, motivation = prioritizing/triaging leads quickly while staying the human checkpoint on outreach
+- [x] Generate `aidlc-docs/inception/user-stories/backoffice-stories.md`, feature-based, one story per: FR-2 (board view), FR-3 (lead cards), FR-4 (detail popup), FR-6 (real-time board updates), FR-9/FR-10 (auto-draft on hot), FR-11 (on-demand draft), FR-12 (review-and-send gate), FR-14 (in-app notification). FR-5 (read-only boundary) and FR-13 (email-only/WhatsApp deferred) captured as explicit scope notes within the relevant stories rather than as standalone stories.
+- [x] Each story follows INVEST criteria (Independent, Negotiable, Valuable, Estimable, Small, Testable)
+- [x] Each story includes Given/When/Then acceptance criteria
+- [x] Map the persona to each story explicitly
