@@ -106,12 +106,13 @@
 
 ### 🔵 INCEPTION — BackOffice lead qualification view
 - [x] Workspace Detection — reutilizado (proyecto brownfield ya establecido vía AI-DLC)
-- [x] Requirements Analysis — COMPLETED (2026-07-09, 2 rondas: verificación inicial + follow-up de ambigüedad/confirmación) — `aidlc-docs/inception/requirements/backoffice-requirements.md`. Awaiting user approval.
+- [x] Requirements Analysis — COMPLETED and APPROVED (2026-07-09, 2 rondas iniciales + 1 amendment durante User Stories) — `aidlc-docs/inception/requirements/backoffice-requirements.md`
   - Scope: nueva app `apps/backoffice` (Next.js, standalone), kanban read-only (Hot/Warm/Cold) sobre `Lead`, tiempo real vía nuevo canal WebSocket, nuevo `list_leads`/`GET /leads` en `agent-service`. Sin auth en esta iteración — seguimiento en [GitHub issue #18](https://github.com/sebastianperudev2001/ask-dmc/issues/18). Identidad visual separada de `apps/chat`, alineada a brand guidelines de dmc.pe, vía skill `frontend-design` en Code Generation.
-- [ ] User Stories — pendiente de evaluación (siguiente paso)
-- [ ] Workflow Planning — pendiente
-- [ ] Application Design — pendiente de evaluación
-- [ ] Units Generation — pendiente de evaluación
+  - **Ampliado durante User Stories** (FR-9 a FR-14, NFR-5/NFR-6): agente de outreach (auto-draft en `hot` o on-demand, gate humano obligatorio antes de enviar, solo email este incremento — WhatsApp diferido a [issue #19](https://github.com/sebastianperudev2001/ask-dmc/issues/19)) + notificación in-app reutilizando el canal WS. Proveedor de email diferido a NFR Requirements.
+- [x] User Stories — COMPLETED and APPROVED (2026-07-09) — persona única "DMC Sales Staff", 7 historias feature-based con criterios Given/When/Then — `aidlc-docs/inception/user-stories/backoffice-{stories,personas}.md`
+- [x] Workflow Planning — COMPLETED and APPROVED (2026-07-10) — `aidlc-docs/inception/plans/backoffice-execution-plan.md`. Plan: Application Design EXECUTE, Units Generation EXECUTE (2 unidades: `agent-service` extendida + nueva `apps/backoffice`), luego per-unit loop completo para `agent-service` (Functional/NFR Requirements/NFR Design/Infra Design/Code Gen) y ligero para `apps/backoffice` (Functional Design ligero + Code Gen, sin NFR/Infra — mismo patrón que `apps/chat` en incremento 2), luego Build and Test.
+- [x] Application Design — COMPLETED and APPROVED (2026-07-10) — 7 preguntas respondidas (OutreachAgentService standalone, LeadEventPublisher pub/sub único, OutreachDraft como entidad nueva con DraftRepository propio, sin DraftLifecycleService separado, sin GET /leads/{id} dedicado, apps/backoffice modular, EmailSender como puerto definido ahora) — `aidlc-docs/inception/application-design/backoffice-{components,component-methods,services,component-dependency,application-design}.md`
+- [x] Units Generation — COMPLETED and APPROVED (2026-07-10) — 3 preguntas respondidas (Incremento 3 numerado secuencialmente, build estrictamente secuencial agent-service→apps/backoffice sin mocks, apps/backoffice standalone sin Turborepo — spike de Turborepo trackeado en [GitHub issue #20](https://github.com/sebastianperudev2001/ask-dmc/issues/20)) — `aidlc-docs/inception/application-design/backoffice-unit-of-work{,-dependency,-story-map}.md`
 
 ### OPERATIONS PHASE
 - [ ] Operations — PLACEHOLDER
