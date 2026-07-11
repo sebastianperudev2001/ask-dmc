@@ -29,7 +29,8 @@ Verified: 6/6 passing.
 ## Step 6 — `useLeadsSocket` hook (pure reducers + hook) [x]
 **File**: `hooks/useLeadsSocket.ts` — `applyLeadWireEvent`, `deriveNotification` (exported pure functions, Functional Design Section 3), the hook itself (subscribes once via `runtime.runFork`, cleans up via `Fiber.interrupt`, same shape as `useChat`'s WS-subscription `useEffect`).
 
-## Step 7 — Hook unit tests
+## Step 7 — Hook unit tests [x]
+Verified: 8/8 passing.
 **File**: `hooks/useLeadsSocket.test.ts` — `applyLeadWireEvent` (snapshot replaces, lead_event upserts by id), `deriveNotification` (hot → Notification, warm/cold/created → null) tested as plain functions, no WS mock needed (same convention as `applyDelta`/`messagesFromHistory` tests).
 
 ## Step 8 — Components
