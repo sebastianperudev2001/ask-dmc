@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+/* Dark mode: applied when .dark class is on <html> — same mechanism as apps/chat */
+@variant dark (&:where(.dark, .dark *));
+
+/* ── Design tokens (placeholder — replaced in Code Generation Step 10 via the
+   frontend-design skill, NFR-2: distinct "internal tool" identity, not apps/chat's
+   consumer-facing branding) ── */
+@theme {
+  --color-bg:      #f5f5f5;
+  --color-surface: #ffffff;
+  --color-border:  #dddddd;
+  --color-text:    #111111;
+  --color-text-muted: #666666;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.dark {
+  --color-bg:      #111111;
+  --color-surface: #1a1a1a;
+  --color-border:  #333333;
+  --color-text:    #f5f5f5;
+  --color-text-muted: #999999;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  font-family: var(--font-sans);
+  background: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+}
+button { font-family: inherit; cursor: pointer; }
