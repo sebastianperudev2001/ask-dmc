@@ -1404,3 +1404,10 @@ Cada pieza siguió RED (test escrito y verificado fallando por la razón correct
 **Context**: CONSTRUCTION phase — transition to Build and Test.
 
 ---
+## Build and Test — Bug found by user: CORS blocked apps/backoffice draft endpoints
+**Timestamp**: 2026-07-11T00:00:26Z
+**User Input**: Screenshot of browser console showing repeated CORS errors — "Access to fetch at 'http://localhost:8000/leads/{id}/drafts/...' from origin 'http://localhost:3001' has been blocked by CORS policy"
+**AI Response**: Root cause confirmed directly (systematic-debugging Phase 1): main.py's CORSMiddleware only allowlisted http://localhost:3000 (apps/chat) and only the GET method — apps/backoffice runs on port 3001 and DraftPanel.tsx needs both GET and POST for the draft endpoints. This gap survived all automated tests because FastAPI's TestClient bypasses CORS entirely (browser-only enforcement) — only real browser verification could catch it, confirming the value of this Build and Test round. Fixed: added http://localhost:3001 to allow_origins and POST to allow_methods. Restarted agent-service, verified via curl that the OPTIONS/GET response now carries access-control-allow-origin: http://localhost:3001.
+**Context**: CONSTRUCTION phase, Build and Test stage — real browser E2E verification (user manually testing apps/backoffice while agent-service/apps/chat run locally) found a genuine cross-origin gap in Code Generation.
+
+---

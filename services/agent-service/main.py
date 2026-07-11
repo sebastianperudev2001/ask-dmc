@@ -80,11 +80,15 @@ app = FastAPI(lifespan=lifespan)
 # Added for GET /conversations/{id}/messages (rehydration after a page reload) — the
 # browser calls this via fetch() from a different origin (localhost:3000), unlike the
 # WS endpoint which isn't subject to CORS. Alcance local (NFR Requirements) — allows
-# only the local dev frontend origin, not a wildcard.
+# only the local dev frontend origins, not a wildcard.
+# Incremento 3: apps/backoffice (localhost:3001) calls GET/POST on the draft endpoints
+# via fetch() from DraftPanel.tsx — found missing during real Build and Test browser
+# verification (TestClient-based tests never exercise CORS, it's a browser-only
+# enforcement mechanism).
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
-    allow_methods=["GET"],
+    allow_origins=["http://localhost:3000", "http://localhost:3001"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
