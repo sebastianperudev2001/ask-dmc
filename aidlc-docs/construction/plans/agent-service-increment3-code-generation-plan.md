@@ -50,7 +50,7 @@
 - `get_active_draft`, `send_draft` (email-presence validation, PATTERN-26; atomic guard via `DraftRepository.mark_sent`, PATTERN-28; `RetryPolicy`-wrapped `EmailSender.send`, PATTERN-21), `discard_draft`
 - Subscribes to `LeadEventPublisher` at construction; on `score_changed` → `hot`, schedules `asyncio.create_task(self.generate_draft(lead.id, "auto"))` (PATTERN-23) with a top-level try/except that logs (BR-27)
 
-## Step 9 — Extend `ChatAgentClient`
+## Step 9 — Extend `ChatAgentClient` [x]
 **File**: `services/agent-service/src/adapters/chat_agent_client.py` (modify)
 - Add `lead_event_publisher: LeadEventPublisher` param to `__init__`
 - In `_upsert_lead` (after `await self._lead_repository.save(lead)`), publish a `LeadEvent` — `event_type="created"` the first time a lead is persisted for this conversation, `event_type="score_changed"` otherwise (single insertion point covers both BR-24's trigger and Story 3's board updates)

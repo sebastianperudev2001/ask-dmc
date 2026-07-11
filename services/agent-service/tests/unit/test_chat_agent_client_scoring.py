@@ -9,6 +9,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from src.adapters.chat_agent_client import ChatAgentClient
+from src.domain.lead_event_publisher import LeadEventPublisher
 from src.domain.models import Lead, LeadScore
 from src.domain.pending_tool_calls import PendingToolCallRegistry
 
@@ -24,7 +25,11 @@ class FakeLeadRepository:
         return self._leads.get(service_session_id)
 
 
-def _build_client(lead_repository: FakeLeadRepository, conversation_id: str = "conv-1") -> ChatAgentClient:
+def _build_client(
+    lead_repository: FakeLeadRepository,
+    conversation_id: str = "conv-1",
+    lead_event_publisher: LeadEventPublisher | None = None,
+) -> ChatAgentClient:
     with patch("src.adapters.chat_agent_client.FoundryChatClient"), patch(
         "src.adapters.chat_agent_client.Agent"
     ):
@@ -40,6 +45,7 @@ def _build_client(lead_repository: FakeLeadRepository, conversation_id: str = "c
             embedding_service=MagicMock(),
             lead_repository=lead_repository,
             conversation_id=conversation_id,
+            lead_event_publisher=lead_event_publisher,
         )
 
 
@@ -97,3 +103,44 @@ async def test_record_user_message_never_downgrades_an_already_hot_lead():
     stored = await repo.find_by_service_session_id("conv-1")
     assert stored.score == LeadScore.HOT
     assert stored.score_justification == "Expresó intención de compra con datos de contacto completos."
+
+
+# ── Incremento 3 — BackOffice: LeadEvent publishing (BR-29) ──
+
+
+@pytest.mark.asyncio
+async def test_upsert_lead_does_not_publish_below_the_first_score_floor():
+    repo = FakeLeadRepository()
+    publisher = LeadEventPublisher()
+    received = []
+
+    async def handler(event) -> None:
+        received.append(event)
+
+    publisher.subscribe(handler)
+    client = _build_client(repo, lead_event_publisher=publisher)
+
+    await client.record_user_message()
+
+    assert received == []  # below the 5-message floor — no Lead created/saved yet
+
+
+@pytest.mark.asyncio
+async def test_upsert_lead_publishes_created_then_score_changed():
+    repo = FakeLeadRepository()
+    publisher = LeadEventPublisher()
+    received = []
+
+    async def handler(event) -> None:
+        received.append(event)
+
+    publisher.subscribe(handler)
+    client = _build_client(repo, lead_event_publisher=publisher)
+
+    for _ in range(5):  # reaches the warm floor -> first Lead save
+        await client.record_user_message()
+    for _ in range(5):  # reaches the hot floor -> second Lead save
+        await client.record_user_message()
+
+    assert [event.event_type for event in received] == ["created", "score_changed"]
+    assert received[-1].lead.score == LeadScore.HOT

@@ -30,8 +30,16 @@ from datetime import datetime, timezone
 from src.adapters.mercadopago_client import MercadoPagoPaymentClient
 from src.adapters.retry_policy import RetryPolicy
 from src.domain.errors import AgentUnavailableError, PaymentServiceUnavailableError
+from src.domain.lead_event_publisher import LeadEventPublisher
 from src.domain.lead_scoring import apply_score_floor
-from src.domain.models import Lead, LeadScore, ProfileQuery, RecommendationCandidate, RecommendationRequest
+from src.domain.models import (
+    Lead,
+    LeadEvent,
+    LeadScore,
+    ProfileQuery,
+    RecommendationCandidate,
+    RecommendationRequest,
+)
 from src.domain.orchestrator import RecommendationOrchestrator
 from src.domain.pending_tool_calls import PendingToolCallRegistry
 from src.ports.embedding_service import EmbeddingService
@@ -101,6 +109,7 @@ class ChatAgentClient:
         lead_repository: LeadRepository,
         conversation_id: str,
         profile_data_timeout_seconds: float = 300.0,
+        lead_event_publisher: LeadEventPublisher | None = None,
     ) -> None:
         self._retry_policy = retry_policy
         self._payment_client = payment_client
@@ -110,6 +119,10 @@ class ChatAgentClient:
         self._embedding_service = embedding_service
         self._lead_repository = lead_repository
         self._profile_data_timeout_seconds = profile_data_timeout_seconds
+        # Incremento 3 (BackOffice) — None-able so existing tests that build a
+        # ChatAgentClient without caring about broadcast/outreach keep working unchanged
+        # (same convention already used for conversation_message_repository elsewhere).
+        self._lead_event_publisher = lead_event_publisher
         # Found via real E2E verification (Build and Test): AgentSession.service_session_id
         # is Foundry's *response id* for the last turn (prefix "resp_") — it rotates on
         # every agent.run() call, it is NOT a stable thread identifier. Using it as the
@@ -199,8 +212,14 @@ class ChatAgentClient:
     async def _upsert_lead(self, **fields) -> Lead | None:
         """BR-21: incrementally persists a Lead keyed by `conversation_id` (stable per
         WS connection — see __init__ docstring for why service_session_id can't be used
-        here)."""
+        here). Incremento 3 (BR-29): publishes a LeadEvent on every save — "created" the
+        first time this conversation persists a Lead, "score_changed" otherwise. This is
+        the single insertion point that satisfies both FR-6/FR-8 (board updates,
+        LeadBroadcaster) and FR-10 (auto-draft trigger, OutreachAgentService) without
+        either of those two subscribers knowing about the other (Application Design,
+        Q2 = A)."""
         lead = await self._lead_repository.find_by_service_session_id(self._conversation_id)
+        is_new = lead is None
         if lead is None:
             lead = Lead(
                 id=str(uuid.uuid4()),
@@ -210,6 +229,9 @@ class ChatAgentClient:
         for key, value in fields.items():
             setattr(lead, key, value)
         await self._lead_repository.save(lead)
+        if self._lead_event_publisher is not None:
+            event_type = "created" if is_new else "score_changed"
+            await self._lead_event_publisher.publish(LeadEvent(event_type=event_type, lead=lead))
         return lead
 
     async def _collect_profile_data(
