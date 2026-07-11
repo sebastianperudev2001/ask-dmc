@@ -38,7 +38,7 @@
 ## Step 6 — Business logic summary [x]
 **File**: `aidlc-docs/construction/agent-service/code/business-logic-summary-increment3.md` (create) — models, event publisher, repository extensions
 
-## Step 7 — Email adapter
+## Step 7 — Email adapter [x]
 **File**: `services/agent-service/src/adapters/acs_email_sender.py` (create)
 - `AzureCommunicationServicesEmailSender` implementing `EmailSender`, wrapped in the existing `RetryPolicy` (PATTERN-21), reading `ACS_CONNECTION_STRING` from config
 
