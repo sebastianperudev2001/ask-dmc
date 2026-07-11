@@ -114,5 +114,15 @@
 - [x] Application Design — COMPLETED and APPROVED (2026-07-10) — 7 preguntas respondidas (OutreachAgentService standalone, LeadEventPublisher pub/sub único, OutreachDraft como entidad nueva con DraftRepository propio, sin DraftLifecycleService separado, sin GET /leads/{id} dedicado, apps/backoffice modular, EmailSender como puerto definido ahora) — `aidlc-docs/inception/application-design/backoffice-{components,component-methods,services,component-dependency,application-design}.md`
 - [x] Units Generation — COMPLETED and APPROVED (2026-07-10) — 3 preguntas respondidas (Incremento 3 numerado secuencialmente, build estrictamente secuencial agent-service→apps/backoffice sin mocks, apps/backoffice standalone sin Turborepo — spike de Turborepo trackeado en [GitHub issue #20](https://github.com/sebastianperudev2001/ask-dmc/issues/20)) — `aidlc-docs/inception/application-design/backoffice-unit-of-work{,-dependency,-story-map}.md`
 
+### 🟢 CONSTRUCTION — agent-service Incremento 3 (BackOffice: read path + broadcast + outreach agent) + apps/backoffice
+- [ ] Per-Unit Loop — unit agent-service (Incremento 3) — IN PROGRESS (started 2026-07-11)
+  - [x] Functional Design — COMPLETED and APPROVED (2026-07-11, 9 preguntas + 2 follow-ups) — dedupe de drafts solo por status=pending, regen on-demand retorna el pending existente sin recrear, auto-trigger fire-and-forget (no bloquea el turno de chat), skip silencioso si falta email solo en el trigger automático, `OutreachAgentService` agentic con tool `get_course_details` (mismo patrón que `ChatAgentClient`), errores LLM propagados on-demand/absorbidos en el trigger automático, envío fallido deja el draft en `pending` sin status `failed` nuevo, `LeadEvent` lleva el `Lead` completo, snapshot de reconexión sin indicador de draft — secciones "Incremento 3" añadidas a `aidlc-docs/construction/agent-service/functional-design/{business-logic-model,business-rules,domain-entities}.md`
+  - [ ] NFR Requirements — pendiente
+  - [ ] NFR Design — pendiente
+  - [ ] Infrastructure Design — pendiente
+  - [ ] Code Generation — pendiente
+- [ ] Per-Unit Loop — unit apps/backoffice (new) — pendiente (empieza tras Code Generation de agent-service, build estrictamente secuencial)
+- [ ] Build and Test — pendiente
+
 ### OPERATIONS PHASE
 - [ ] Operations — PLACEHOLDER

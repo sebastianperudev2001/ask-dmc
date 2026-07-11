@@ -98,3 +98,38 @@ Ningún webhook de pago se procesa sin verificar primero la firma HMAC (`x-signa
 
 ### BR-21 — Persistencia de leads (override de BR-08)
 A diferencia de BR-08 (incremento 1, sin persistencia), en este incremento el `Lead` y su referencia de sesión (`service_session_id` de Foundry) **sí se persisten** en Postgres — al cierre de la conversación y también de forma incremental si se detectan señales de scoring relevantes (ej. intención de compra) antes del cierre formal.
+
+---
+
+# Incremento 3 — BackOffice: read path + broadcast en tiempo real + agente de outreach
+
+**Fecha**: 2026-07-11
+
+### BR-22 — Definición de draft "activo" (dedupe, Story 4/5)
+Solo un `OutreachDraft` con `status = "pending"` cuenta como activo para efectos de deduplicación. Una vez que un draft pasa a `sent` o `discarded`, deja de bloquear la generación de un draft nuevo para ese mismo lead.
+
+### BR-23 — Regeneración on-demand cuando ya existe un draft pending
+Si `generate_draft` se invoca (automático u on-demand) para un lead que ya tiene un draft `pending`, se retorna ese draft existente sin generar uno nuevo ni lanzar error — "mostrar, no regenerar." El trigger automático y el on-demand comparten exactamente el mismo método y, por lo tanto, la misma regla de dedupe.
+
+### BR-24 — Generación automática de draft es fire-and-forget
+El trigger automático (FR-10) no bloquea el turno de chat que lo originó: `LeadEventPublisher` no espera (`await`) a que el subscriber de `OutreachAgentService` termine su llamada al LLM — la generación corre como una tarea en background. Esto es necesario porque el evento se publica desde dentro de `ChatAgentClient._apply_engagement_floor`, en plena ejecución de un turno de `apps/chat`.
+
+### BR-25 — Lead sin email al momento del trigger automático
+Si el trigger automático se dispara para un lead `hot` sin `Lead.email`, la generación del draft se omite (se registra en logs) y no hay reintento automático posterior — la transición a `hot` de BR-17b es monotónica y no vuelve a dispararse para ese lead. El staff puede generar un draft on-demand más tarde si el email llega a completarse. Esta restricción **no** aplica al trigger on-demand (Story 5 permite generar un draft para cualquier lead, en cualquier score, con o sin email) — el email solo es obligatorio al momento de `send_draft` (ver BR-28).
+
+### BR-26 — Resolución de datos de curso vía tool-calling agentic
+`OutreachAgentService` no es un wrapper de una sola llamada a `LLMProvider.complete()` — es un agente con tool-calling, mismo patrón ya verificado para `ChatAgentClient`/Microsoft Agent Framework. Expone un tool `get_course_details(course_id) -> {name, description, curriculum}` respaldado por el `CourseRepository` ya existente; el LLM decide cuándo invocarlo para enriquecer el draft con datos reales de los cursos listados en `Lead.recommended_programs`, en vez de que el código de orquestación pre-resuelva esos datos y los inserte en un prompt de un solo turno.
+
+### BR-27 — Manejo de error en generación de draft (llamada LLM/tool-calling)
+Si la ejecución del agente dentro de `generate_draft` falla (timeout, error del proveedor), el comportamiento depende de quién invocó:
+- **On-demand** (staff-iniciado): el error se propaga — el caller HTTP recibe una respuesta de error para mostrar en la UI.
+- **Automático** (BR-24, background task): el error se registra en logs y se absorbe — nunca debe escapar hacia el publisher ni interrumpir el turno de chat al que está enganchado.
+
+### BR-28 — Manejo de error en envío de email
+Si `EmailSender.send` falla dentro de `send_draft`, el draft **permanece en `status = "pending"`** — no se introduce un status `"failed"` separado. El error se propaga a la UI para que el staff pueda reintentar la acción "Send". Adicionalmente, `send_draft` valida que `Lead.email` esté presente *antes* de invocar `EmailSender.send`; si está vacío, rechaza con un error de validación (mismo criterio que BR-09 para campos obligatorios) — `EmailSender.send` nunca se invoca con un destinatario vacío.
+
+### BR-29 — Payload de `LeadEvent`
+Cada evento publicado por `LeadEventPublisher` incluye el registro `Lead` completo (no solo `lead_id` + score) — permite que `LeadBroadcaster` reenvíe directamente sin un lookup adicional, y que `KanbanBoard` renderice una card nueva sin un round-trip extra a `GET /leads`.
+
+### BR-30 — Snapshot de reconexión sin estado de draft
+El snapshot que `LeadBroadcaster` envía al (re)conectar contiene únicamente campos de `Lead` — ningún indicador de "draft activo" se expone a nivel de card del kanban. El estado de un draft (si existe, y su contenido) solo se consulta cuando el staff abre el detail popup de ese lead específico (`DraftPanel` → `get_active_draft`).

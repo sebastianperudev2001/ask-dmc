@@ -1211,3 +1211,35 @@ Cada pieza siguió RED (test escrito y verificado fallando por la razón correct
 **Context**: INCEPTION phase, Units Generation stage — Part 2 (generation), completing the INCEPTION phase for the BackOffice lead qualification view initiative.
 
 ---
+## CONSTRUCTION PHASE — agent-service Incremento 3 — Functional Design Plan Created
+**Timestamp**: 2026-07-10T00:00:08Z
+**User Input**: "approved" (Units Generation)
+**AI Response**: Committed INCEPTION-phase docs (commit 25827a0). Entered CONSTRUCTION PHASE, per-unit loop starting with agent-service (Incremento 3), first stage Functional Design. Created `aidlc-docs/construction/plans/agent-service-increment3-functional-design-plan.md` with 9 questions covering: active-draft definition for dedupe, on-demand regen UX when a pending draft exists, sync vs fire-and-forget auto-draft generation, missing-email edge case at hot, course name resolution for personalization, LLM failure handling, email send failure handling, LeadEvent payload shape, and reconnect-snapshot draft-awareness. Waiting for user answers.
+**Context**: CONSTRUCTION phase, agent-service Incremento 3, Functional Design stage — Part 1 (planning).
+
+---
+## agent-service Incremento 3 — Functional Design: Follow-up Questions
+**Timestamp**: 2026-07-11T00:00:00Z
+**User Input**: "done" — Q1=A, Q2=A, Q3=A, Q4=blank, Q5=A ("this should be a tool"), Q6=A, Q7=A, Q8=B, Q9=A
+**AI Response**: Detected 1 missing answer (Q4) and 1 ambiguous answer (Q5's "this should be a tool" note — could mean OutreachAgentService becomes a full agentic tool-calling loop like ChatAgentClient, or just a plain internal CourseRepository call). Added 2 follow-up questions to the plan file rather than proceeding with an assumption. Waiting for user answers.
+**Context**: CONSTRUCTION phase, agent-service Incremento 3, Functional Design stage — Part 1 (planning), mandatory ambiguity-resolution step.
+
+---
+## agent-service Incremento 3 — Functional Design Artifacts Generated
+**Timestamp**: 2026-07-11T00:00:01Z
+**User Input**: "Done" (follow-up 1 = A, follow-up 2 = A — OutreachAgentService is agentic with tool-calling, mirroring ChatAgentClient)
+**AI Response**: Analyzed all 9 original + 2 follow-up answers — no remaining contradictions (Q3 fire-and-forget background task is consistent with Q6's error handling for the auto-trigger path swallowing errors; BR-25's email-missing skip is scoped only to the auto trigger, not on-demand, matching Story 5's "any lead, any score" allowance). Appended "Incremento 3" sections to the 3 existing agent-service functional design docs (continuing the established per-unit convention from Incremento 2):
+- business-logic-model.md — Sections 19-23: list_leads read path, LeadEventPublisher/LeadBroadcaster wire protocol for /ws/leads, agentic OutreachAgentService with get_course_details tool, send/discard flow, PBT properties
+- business-rules.md — BR-22 through BR-30: active-draft dedupe definition, on-demand regen behavior, fire-and-forget auto-trigger, missing-email handling (auto-only), agentic course resolution, LLM/send error handling, LeadEvent payload shape, draft-unaware reconnect snapshot
+- domain-entities.md — OutreachDraft entity (pending/sent/discarded, no separate failed status), LeadEvent (in-memory, full Lead embedded), Incremento 3 relationships
+- New internal-only method noted: LeadRepository.find_by_id(lead_id) — not exposed via API (Application Design's no-GET/leads/id decision was about the public API surface only), used internally by OutreachAgentService
+**Context**: CONSTRUCTION phase, agent-service Incremento 3, Functional Design stage — Part 2 (generation).
+
+---
+## Functional Design Approval — agent-service Incremento 3
+**Timestamp**: 2026-07-11T00:00:02Z
+**User Input**: "continue"
+**AI Response**: Marked Functional Design (agent-service Incremento 3) COMPLETED and APPROVED in aidlc-state.md. Proceeding to NFR Requirements stage for this unit.
+**Context**: CONSTRUCTION phase, agent-service Incremento 3 — transition from Functional Design to NFR Requirements.
+
+---

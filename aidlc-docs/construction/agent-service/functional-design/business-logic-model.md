@@ -345,4 +345,71 @@ Confirmado con el usuario vía `AskUserQuestion` que las conversaciones "rotas" 
 
 Ver `aidlc-docs/construction/build-and-test/build-and-test-summary.md` (Ronda 5) para el detalle completo, incluyendo un hallazgo incidental no relacionado (`test_p6_pgvector_ranking_matches_numpy_oracle`, preexistente del incremento 1, no corregido por estar fuera de alcance).
 
+---
+
+# Incremento 3 — BackOffice: read path + broadcast en tiempo real + agente de outreach
+
+**Fecha**: 2026-07-11
+**Basado en**: `aidlc-docs/inception/application-design/backoffice-{components,component-methods,services}.md` (aprobado), respuestas de `aidlc-docs/construction/plans/agent-service-increment3-functional-design-plan.md`
+
+## 19. Read path: `list_leads` (FR-7)
+
+`LeadQueryService.list_leads()` delega directamente en `LeadRepository.list_leads()` (`SELECT * FROM leads ORDER BY created_at DESC` — sin paginación ni filtros, consistente con NFR-4/escala de demo). `GET /leads` serializa la lista completa de `Lead` a JSON. No existe `GET /leads/{id}` a nivel de API (decisión de Application Design, Q5) — pero `LeadRepository` gana un método interno adicional, `find_by_id(lead_id) -> Lead | None`, usado únicamente por `OutreachAgentService` (Sección 21) para resolver un lead individual antes de generar/enviar un draft. Este método no se expone por HTTP; no contradice la decisión de Application Design, que era específicamente sobre la superficie de la API pública.
+
+## 20. Broadcast en tiempo real: `LeadEventPublisher` + `LeadBroadcaster` (FR-6, FR-8)
+
+**`LeadEvent`** (BR-29, Q8 = B): cada evento lleva el registro `Lead` completo, no solo `lead_id`/score — evita un round-trip adicional tanto en `LeadBroadcaster` como en `KanbanBoard`.
+
+```python
+@dataclass(frozen=True)
+class LeadEvent:
+    event_type: Literal["created", "score_changed"]
+    lead: Lead
+```
+
+**Puntos de publicación**:
+- `ChatAgentClient._upsert_lead` (ya existente) publica `LeadEvent(event_type="created", lead=...)` la primera vez que un `Lead` se persiste en una conversación.
+- `ChatAgentClient._apply_engagement_floor` (ya existente, BR-17b) publica `LeadEvent(event_type="score_changed", lead=...)` cada vez que persiste un cambio de `Lead.score` — sea por el piso de engagement o, en el futuro, por `score_lead()` (BR-17) si llega a wirearse.
+
+**`LeadBroadcaster`**: mantiene el conjunto de conexiones `/ws/leads` activas en memoria (mismo patrón de gestión de conexiones que `/ws/chat`). Al aceptar una conexión — nueva o reconexión, sin distinción especial — envía primero un mensaje `snapshot` (`LeadQueryService.list_leads()`), y a partir de ahí reenvía cada `LeadEvent` publicado como un mensaje `lead_event`. Como el snapshot siempre se reenvía completo en cada conexión (BR-30), no se necesita numeración de secuencia ni buffer de replay para satisfacer el criterio de aceptación de la Story 3 ("reconcilia al estado actual del servidor, sin cards duplicadas/obsoletas").
+
+### Contrato de mensajes WebSocket — `/ws/leads`
+
+```json
+// Salida — snapshot (al conectar/reconectar)
+{ "type": "snapshot", "leads": [ { "...Lead fields...": "..." } ] }
+
+// Salida — evento en vivo
+{ "type": "lead_event", "event_type": "created" | "score_changed", "lead": { "...Lead fields...": "..." } }
+```
+
+## 21. Agente de outreach — generación de drafts con tool-calling (FR-9, FR-10, FR-11)
+
+**Arquitectura (Q5 + follow-up = A)**: `OutreachAgentService` no es un simple wrapper de `LLMProvider.complete()` — es agentic, con el mismo patrón de tool-calling ya verificado en `ChatAgentClient`/Microsoft Agent Framework (ver Sección 8). El LLM decide invocar un tool `get_course_details(course_id) -> {name, description, curriculum}` (respaldado por el `CourseRepository` ya existente, BR-26) para enriquecer el draft con datos reales de los cursos en `Lead.recommended_programs`, en vez de que el código de orquestación pre-obtenga esos datos y los inserte en un prompt de un solo turno.
+
+**`generate_draft(lead_id, trigger)`**:
+1. `LeadRepository.find_by_id(lead_id)` → `Lead`.
+2. `DraftRepository.find_active_by_lead_id(lead_id)` — si existe un draft `pending`, se retorna tal cual, **sin** generar uno nuevo ni lanzar error (BR-23, Q2 = A). Aplica igual para el trigger automático y el on-demand — es el mismo método, un único código de dedupe (Sección de Application Design ya anticipaba esto: "both triggers converge on one method").
+3. Si `trigger == "auto"` y `lead.email` está vacío: se omite la generación (se loggea), sin reintento posterior — la transición a `hot` de BR-17b es monotónica/de una sola vez (BR-25, Q4 = A). El trigger on-demand **no** tiene esta restricción — el staff puede generar un draft para cualquier lead sin importar si el email ya está capturado (Story 5 permite cualquier score/estado); el email solo se vuelve obligatorio al momento de `send_draft` (Sección 22).
+4. Corre el agente (system prompt de outreach + tool `get_course_details`) con `profile_summary`, `motivation`, `motivation_detail` del lead como contexto — produce `{subject, body}`.
+5. Persiste `OutreachDraft(status="pending", trigger=trigger, ...)` vía `DraftRepository.save`.
+6. Retorna el `OutreachDraft`.
+
+**Trigger automático (FR-10, BR-24, Q3 = A — fire-and-forget)**: `OutreachAgentService` se suscribe a `LeadEventPublisher` en el arranque del servicio. Al recibir un evento `score_changed` donde `lead.score == LeadScore.HOT`, agenda `generate_draft(lead.id, trigger="auto")` como una tarea en background (`asyncio.create_task`, no `await` dentro del callback del publisher) — así el turno de chat en `apps/chat` que disparó el cambio de score no espera a que termine la llamada al LLM. Cualquier excepción dentro de esa tarea se loggea y se absorbe (BR-27) — nunca debe propagarse hacia el publisher ni interrumpir el turno de chat.
+
+**Trigger on-demand (FR-11)**: mismo método `generate_draft(lead_id, trigger="on_demand")`, invocado síncronamente desde el endpoint HTTP correspondiente (ruta exacta TBD, no bloqueante para este diseño).
+
+## 22. Revisión, envío y descarte de drafts (FR-12, FR-13, Story 6)
+
+- **`get_active_draft(lead_id)`** → `DraftRepository.find_active_by_lead_id(lead_id)` — usado por `DraftPanel` al abrir el popup de un lead.
+- **`send_draft(draft_id)`**: `DraftRepository.find_by_id(draft_id)` + `LeadRepository.find_by_id(draft.lead_id)`. Si `lead.email` está vacío, se rechaza con un error de validación (mismo espíritu que BR-09 — un campo obligatorio ausente para la operación, no un caso nuevo que requiera un tool/handling especial). Si hay email, invoca `EmailSender.send(lead.email, draft.subject, draft.body)`. Éxito: `draft.status = "sent"`, `draft.sent_at = now()`, persiste. Falla (BR-28, Q7 = A): el error se propaga a la UI, `draft.status` permanece `"pending"` — no se introduce un status `"failed"` separado; el staff simplemente reintenta la acción "Send".
+- **`discard_draft(draft_id)`**: `draft.status = "discarded"`, persiste. No invoca `EmailSender` bajo ninguna circunstancia.
+
+## 23. Testable Properties — Incremento 3 (PBT-01, extensión habilitada)
+
+- **Dedupe (BR-22/BR-23)**: para cualquier secuencia de llamadas a `generate_draft` sobre el mismo `lead_id` sin un `send_draft`/`discard_draft` intermedio, nunca existe más de una fila con `status = "pending"` en `DraftRepository` para ese lead.
+- **Serialización de `LeadEvent` (BR-29)**: todo `LeadEvent` publicado contiene un `Lead` completo y serializable — round-trip JSON sin pérdida de campos.
+- **Monotonicidad del piso de engagement**: ya cubierta por BR-17b/Hypothesis (incremento 2) — sin regresión introducida por el nuevo punto de publicación en `_apply_engagement_floor`.
+- **`send_draft` nunca envía sin email**: property test — para cualquier `Lead` con `email is None`, `send_draft` siempre lanza el error de validación y nunca invoca `EmailSender.send`.
+
 Ver `aidlc-docs/construction/plans/agent-service-increment2-code-generation-plan.md` para la nota completa de estos hallazgos.

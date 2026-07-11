@@ -145,3 +145,43 @@ ConversationSession ──(1:0..1)──> Lead
 Lead ──(0..1)──> PaymentOrder (vía payment_checkout_url / preference_id)
 Lead.recommended_programs ──(referencia)──> Course.course_id (incremento 1)
 ```
+
+---
+
+# Incremento 3 — BackOffice: read path + broadcast en tiempo real + agente de outreach
+
+**Fecha**: 2026-07-11
+
+## `OutreachDraft` (nueva entidad persistida, `DraftRepository`)
+
+Ciclo de vida independiente de `Lead` (BR-22). Ver `backoffice-components.md`/`backoffice-component-methods.md` para el diseño original a nivel de Application Design.
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `draft_id` | `str` (UUID) | Identificador único |
+| `lead_id` | `str` | Referencia a `Lead.id` |
+| `subject` | `str` | Asunto del email, generado por el agente de outreach |
+| `body` | `str` | Cuerpo del email, generado por el agente de outreach |
+| `status` | `str` | `pending \| sent \| discarded` (BR-22, BR-28 — sin status `failed` separado) |
+| `trigger` | `str` | `auto \| on_demand` — de dónde vino la generación (FR-10 vs. FR-11) |
+| `created_at` | `datetime` | Timestamp de generación |
+| `sent_at` | `datetime \| None` | Timestamp de envío exitoso (`None` mientras `status != "sent"`) |
+
+## `LeadEvent` (efímero, no persistido — solo en memoria, `LeadEventPublisher`)
+
+```python
+@dataclass(frozen=True)
+class LeadEvent:
+    event_type: Literal["created", "score_changed"]
+    lead: Lead
+```
+
+Lleva el `Lead` completo (BR-29, Q8 = B de la Functional Design), no solo `lead_id`/score — evita un lookup adicional tanto en `LeadBroadcaster` como en el frontend al recibirlo.
+
+## Relaciones — Incremento 3
+
+```
+Lead ──(0..N)──> OutreachDraft (vía lead_id; a lo sumo un OutreachDraft con status=pending por Lead — BR-22)
+OutreachDraft.body ──(generado usando)──> Course (vía tool get_course_details, resolviendo Lead.recommended_programs — BR-26)
+LeadEvent.lead ──(snapshot embebido de)──> Lead (no es una referencia, es un valor completo — BR-29)
+```
