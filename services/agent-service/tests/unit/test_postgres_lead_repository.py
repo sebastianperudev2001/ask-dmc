@@ -79,3 +79,43 @@ async def test_save_upserts_existing_lead(connection_pool):
     updated = await repo.find_by_service_session_id("test-session-3")
     assert updated.score == LeadScore.HOT
     assert updated.score_justification == "Pidió link de pago"
+
+
+# ── Incremento 3 — BackOffice ──
+
+
+async def test_list_leads_returns_all_leads_newest_first(connection_pool):
+    await connection_pool.pool.execute("TRUNCATE TABLE conversation_sessions, leads")
+    repo = PostgresLeadRepository(connection_pool)
+    await repo.save(_lead("test-session-4"))
+    await repo.save(_lead("test-session-5"))
+
+    leads = await repo.list_leads()
+
+    assert {lead.service_session_id for lead in leads} == {"test-session-4", "test-session-5"}
+
+
+async def test_list_leads_returns_empty_list_when_no_leads(connection_pool):
+    await connection_pool.pool.execute("TRUNCATE TABLE conversation_sessions, leads")
+    repo = PostgresLeadRepository(connection_pool)
+
+    assert await repo.list_leads() == []
+
+
+async def test_find_by_id_returns_the_matching_lead(connection_pool):
+    await connection_pool.pool.execute("TRUNCATE TABLE conversation_sessions, leads")
+    repo = PostgresLeadRepository(connection_pool)
+    lead = _lead("test-session-6")
+    await repo.save(lead)
+
+    found = await repo.find_by_id(lead.id)
+
+    assert found is not None
+    assert found.id == lead.id
+
+
+async def test_find_by_id_returns_none_when_not_found(connection_pool):
+    await connection_pool.pool.execute("TRUNCATE TABLE conversation_sessions, leads")
+    repo = PostgresLeadRepository(connection_pool)
+
+    assert await repo.find_by_id("nonexistent") is None

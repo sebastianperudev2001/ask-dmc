@@ -124,3 +124,25 @@ async def test_p1_p2_filter_and_relaxation_against_real_db(connection_pool):
         limit=None,
     )
     assert len(relaxed) == 1  # P2: relaxing the budget by $1 recovers the candidate
+
+
+# ── Incremento 3 — BackOffice: GetCourseDetailsTool (BR-26) ──
+
+
+async def test_find_by_id_returns_the_matching_course(connection_pool):
+    await connection_pool.pool.execute("TRUNCATE TABLE courses")
+    repo = PostgresCourseRepository(connection_pool)
+    await _seed_courses(connection_pool, [_FIXED_COURSE])
+
+    found = await repo.find_by_id(_FIXED_COURSE.course_id)
+
+    assert found is not None
+    assert found.name == _FIXED_COURSE.name
+    assert found.curriculum == _FIXED_COURSE.curriculum
+
+
+async def test_find_by_id_returns_none_when_not_found(connection_pool):
+    await connection_pool.pool.execute("TRUNCATE TABLE courses")
+    repo = PostgresCourseRepository(connection_pool)
+
+    assert await repo.find_by_id("nonexistent") is None

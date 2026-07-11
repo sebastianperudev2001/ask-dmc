@@ -29,7 +29,7 @@
 - `services/agent-service/src/adapters/postgres_course_repository.py` (modify): implement `find_by_id`
 - `services/agent-service/src/adapters/postgres_draft_repository.py` (create): implement the port against a new `outreach_drafts` table; `mark_sent` uses `UPDATE ... WHERE status = 'pending' RETURNING *`
 
-## Step 5 — Business logic unit tests
+## Step 5 — Business logic unit tests [x]
 - `tests/unit/test_lead_event_publisher.py` (create): publish fans out to all subscribers; a subscriber exception doesn't break delivery to others
 - `tests/unit/test_postgres_lead_repository.py` (modify): `list_leads`, `find_by_id`
 - `tests/unit/test_postgres_course_repository.py` (modify, or `test_postgres_repository.py` if that's where course tests live — verify at execution time): `find_by_id`
