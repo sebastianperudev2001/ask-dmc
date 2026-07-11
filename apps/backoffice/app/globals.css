@@ -3,32 +3,110 @@
 /* Dark mode: applied when .dark class is on <html> — same mechanism as apps/chat */
 @variant dark (&:where(.dark, .dark *));
 
-/* ── Design tokens (placeholder — replaced in Code Generation Step 10 via the
-   frontend-design skill, NFR-2: distinct "internal tool" identity, not apps/chat's
-   consumer-facing branding) ── */
+/* ── Design tokens ──────────────────────────────────────────────────────────
+   apps/backoffice is an internal triage tool for DMC sales staff, not the
+   student-facing "advisor" chat (navy/gold, warm/narrative). This is a control-room
+   board: the entire job of the page is signaling lead temperature at a glance, so the
+   palette IS the temperature scale — hot/warm/cold map directly to ember/ochre/steel,
+   not an arbitrary category-color assignment. Base chrome is cool graphite, not warm
+   cream and not near-black — a working console, not a marketing surface. ── */
 @theme {
-  --color-bg:      #f5f5f5;
-  --color-surface: #ffffff;
-  --color-border:  #dddddd;
-  --color-text:    #111111;
-  --color-text-muted: #666666;
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --color-bg:           #eef0f2;
+  --color-surface:      #ffffff;
+  --color-surface-2:    #f5f6f8;
+  --color-border:       #d8dce1;
+  --color-border-strong:#c2c8d0;
+  --color-text:         #1a2027;
+  --color-text-muted:   #5b6572;
+  --color-text-faint:   #8b94a0;
+
+  /* Temperature scale — the signature system. Hot column/cards get a genuine warm
+     background wash (not just a dot), so the board reads as a heat-map from across
+     the room, not a neutral list with colored labels. */
+  --color-hot:     #e15a3c;
+  --color-hot-bg:  #fce9e4;
+  --color-warm:    #c99a2e;
+  --color-warm-bg: #fbf1dc;
+  --color-cold:    #4c7ea8;
+  --color-cold-bg: #e7eff5;
+
+  --color-accent:  #3c4e68; /* UI chrome: buttons, links, focus rings — deliberately
+                                outside the temperature scale so it never competes */
+  --color-success: #2f7a5e; /* draft sent */
+  --color-danger:  #b3261e; /* errors */
+
+  --font-display: "Space Grotesk", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body:    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono:    "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --shadow-sm: 0 1px 2px rgba(26,32,39,.06);
+  --shadow:    0 1px 3px rgba(26,32,39,.08), 0 4px 16px rgba(26,32,39,.06);
+  --shadow-lg: 0 16px 48px rgba(26,32,39,.18);
 }
 
 .dark {
-  --color-bg:      #111111;
-  --color-surface: #1a1a1a;
-  --color-border:  #333333;
-  --color-text:    #f5f5f5;
-  --color-text-muted: #999999;
+  --color-bg:           #14181d;
+  --color-surface:      #1b2027;
+  --color-surface-2:    #20262e;
+  --color-border:       #2b323c;
+  --color-border-strong:#384049;
+  --color-text:         #e7eaee;
+  --color-text-muted:   #97a0ac;
+  --color-text-faint:   #6b7480;
+
+  --color-hot:     #ff7a5c;
+  --color-hot-bg:  #3a2018;
+  --color-warm:    #e4b84e;
+  --color-warm-bg: #332a14;
+  --color-cold:    #7aa8cc;
+  --color-cold-bg: #182530;
+
+  --color-accent:  #90a0bd;
+  --color-success: #4fae8b;
+  --color-danger:  #e5766d;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
 body {
-  font-family: var(--font-sans);
+  font-family: var(--font-body);
   background: var(--color-bg);
   color: var(--color-text);
   -webkit-font-smoothing: antialiased;
+  font-size: 14px;
 }
-button { font-family: inherit; cursor: pointer; }
+button {
+  font-family: inherit;
+  cursor: pointer;
+  color: var(--color-text);
+}
+button:disabled { cursor: not-allowed; opacity: 0.55; }
+button:focus-visible, a:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ── Scrollbar (matches apps/chat's mechanism, neutral here) ── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border-strong); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-text-faint); }
+
+/* ── Signature: a live pulse on Hot leads only — motion reserved for the single most
+   urgent state, not scattered across the UI. Respects reduced-motion. ── */
+@keyframes lead-pulse {
+  0%   { box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-hot) 55%, transparent); }
+  70%  { box-shadow: 0 0 0 7px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+.lead-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-hot);
+  flex-shrink: 0;
+  animation: lead-pulse 1.8s ease-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lead-pulse-dot { animation: none; }
+}

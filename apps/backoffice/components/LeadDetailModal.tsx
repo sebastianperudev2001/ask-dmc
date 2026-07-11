@@ -32,62 +32,109 @@ const LeadDetailModal = ({ lead, onClose }: LeadDetailModalProps) => {
         style={{
           background: 'var(--color-surface)',
           border: '1px solid var(--color-border)',
-          borderRadius: 12,
-          padding: 24,
-          width: 480,
+          borderRadius: 10,
+          boxShadow: 'var(--shadow-lg)',
+          width: 520,
           maxWidth: '90vw',
           maxHeight: '85vh',
           overflowY: 'auto',
           display: 'flex',
           flexDirection: 'column',
-          gap: 12,
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <h2 style={{ margin: 0, fontSize: 18 }}>{lead.name ?? 'Sin nombre'}</h2>
-          <button type="button" data-testid="lead-detail-modal-close" onClick={onClose}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '18px 22px',
+            borderBottom: '1px solid var(--color-border)',
+          }}
+        >
+          <h2 style={{ margin: 0, fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 17 }}>
+            {lead.name ?? 'Sin nombre'}
+          </h2>
+          <button
+            type="button"
+            data-testid="lead-detail-modal-close"
+            onClick={onClose}
+            style={{ background: 'none', border: 'none', fontSize: 16, color: 'var(--color-text-muted)' }}
+          >
             ✕
           </button>
         </div>
 
-        <dl style={{ display: 'grid', gridTemplateColumns: '140px 1fr', rowGap: 6, fontSize: 13 }}>
-          <dt style={{ color: 'var(--color-text-muted)' }}>Email</dt>
-          <dd style={{ margin: 0 }}>{lead.email ?? '—'}</dd>
+        <div style={{ padding: '18px 22px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <dl style={{ display: 'grid', gridTemplateColumns: '128px 1fr', rowGap: 9, fontSize: 13 }}>
+            <dt style={{ color: 'var(--color-text-muted)' }}>Email</dt>
+            <dd style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: 12.5 }}>{lead.email ?? '—'}</dd>
 
-          <dt style={{ color: 'var(--color-text-muted)' }}>Creado</dt>
-          <dd style={{ margin: 0 }}>{new Date(lead.createdAt).toLocaleString('es-PE')}</dd>
+            <dt style={{ color: 'var(--color-text-muted)' }}>Creado</dt>
+            <dd style={{ margin: 0, fontFamily: 'var(--font-mono)', fontSize: 12.5 }}>
+              {new Date(lead.createdAt).toLocaleString('es-PE')}
+            </dd>
 
-          <dt style={{ color: 'var(--color-text-muted)' }}>Score</dt>
-          <dd style={{ margin: 0, textTransform: 'uppercase' }}>{lead.score}</dd>
+            <dt style={{ color: 'var(--color-text-muted)' }}>Score</dt>
+            <dd style={{ margin: 0 }}>
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 11,
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                  padding: '2px 8px',
+                  borderRadius: 4,
+                  color: `var(--color-${lead.score})`,
+                  background: `var(--color-${lead.score}-bg)`,
+                }}
+              >
+                {lead.score}
+              </span>
+            </dd>
 
-          <dt style={{ color: 'var(--color-text-muted)' }}>Justificación</dt>
-          <dd style={{ margin: 0 }}>{lead.scoreJustification || '—'}</dd>
+            <dt style={{ color: 'var(--color-text-muted)' }}>Justificación</dt>
+            <dd style={{ margin: 0 }}>{lead.scoreJustification || '—'}</dd>
 
-          <dt style={{ color: 'var(--color-text-muted)' }}>Perfil</dt>
-          <dd style={{ margin: 0 }}>{lead.profileSummary || '—'}</dd>
+            <dt style={{ color: 'var(--color-text-muted)' }}>Perfil</dt>
+            <dd style={{ margin: 0 }}>{lead.profileSummary || '—'}</dd>
 
-          <dt style={{ color: 'var(--color-text-muted)' }}>Motivación</dt>
-          <dd style={{ margin: 0 }}>
-            {lead.motivation}
-            {lead.motivationDetail ? ` — ${lead.motivationDetail}` : ''}
-          </dd>
+            <dt style={{ color: 'var(--color-text-muted)' }}>Motivación</dt>
+            <dd style={{ margin: 0 }}>
+              {lead.motivation}
+              {lead.motivationDetail ? ` — ${lead.motivationDetail}` : ''}
+            </dd>
 
-          <dt style={{ color: 'var(--color-text-muted)' }}>Programas</dt>
-          <dd style={{ margin: 0 }}>{lead.recommendedPrograms.join(', ') || '—'}</dd>
+            <dt style={{ color: 'var(--color-text-muted)' }}>Programas</dt>
+            <dd style={{ margin: 0 }}>{lead.recommendedPrograms.join(', ') || '—'}</dd>
 
-          <dt style={{ color: 'var(--color-text-muted)' }}>Pago</dt>
-          <dd style={{ margin: 0 }}>
-            {lead.paymentConfirmed
-              ? `Confirmado (${lead.paymentConfirmedAt ? new Date(lead.paymentConfirmedAt).toLocaleString('es-PE') : ''})`
-              : lead.paymentLinkSent
-                ? 'Link enviado, sin confirmar'
-                : 'Sin acción de pago'}
-          </dd>
-        </dl>
+            <dt style={{ color: 'var(--color-text-muted)' }}>Pago</dt>
+            <dd style={{ margin: 0 }}>
+              {lead.paymentConfirmed
+                ? `Confirmado (${lead.paymentConfirmedAt ? new Date(lead.paymentConfirmedAt).toLocaleString('es-PE') : ''})`
+                : lead.paymentLinkSent
+                  ? 'Link enviado, sin confirmar'
+                  : 'Sin acción de pago'}
+            </dd>
+          </dl>
 
-        <hr style={{ border: 'none', borderTop: '1px solid var(--color-border)', margin: '4px 0' }} />
-
-        <DraftPanel leadId={lead.id} leadEmail={lead.email} />
+          <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 16 }}>
+            <div
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 12,
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                color: 'var(--color-text-muted)',
+                marginBottom: 10,
+              }}
+            >
+              Outreach
+            </div>
+            <DraftPanel leadId={lead.id} leadEmail={lead.email} />
+          </div>
+        </div>
       </div>
     </div>
   )

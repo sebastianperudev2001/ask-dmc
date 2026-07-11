@@ -32,27 +32,33 @@ const NotificationCenter = ({ notifications, onDismiss, onNotificationClick }: N
             display: 'flex',
             alignItems: 'center',
             gap: 10,
-            padding: '10px 14px',
+            padding: '11px 14px',
             borderRadius: 8,
+            borderLeft: '3px solid var(--color-hot)',
             background: 'var(--color-surface)',
             border: '1px solid var(--color-border)',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+            borderLeftWidth: 3,
+            borderLeftColor: 'var(--color-hot)',
+            boxShadow: 'var(--shadow)',
             fontSize: 13,
+            width: 300,
           }}
         >
+          <span className="lead-pulse-dot" aria-hidden />
           <button
             type="button"
             data-testid="notification-toast-body"
             onClick={() => onNotificationClick(notification.leadId)}
-            style={{ background: 'none', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer' }}
+            style={{ background: 'none', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer', flex: 1 }}
           >
-            <strong>{notification.leadName ?? 'Un lead'}</strong> está listo para contactar
+            <strong>{notification.leadName ?? 'Un lead'}</strong>{' '}
+            <span style={{ color: 'var(--color-text-muted)' }}>está listo para contactar</span>
           </button>
           <button
             type="button"
             data-testid="notification-toast-dismiss"
             onClick={() => onDismiss(notification.id)}
-            style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer' }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-faint)' }}
           >
             ✕
           </button>

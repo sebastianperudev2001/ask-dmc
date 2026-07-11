@@ -16,13 +16,27 @@ const BackofficeApp = () => {
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <header
         style={{
-          padding: '14px 20px',
+          padding: '14px 24px',
           borderBottom: '1px solid var(--color-border)',
-          fontWeight: 600,
-          fontSize: 15,
+          background: 'var(--color-surface)',
+          display: 'flex',
+          alignItems: 'baseline',
+          gap: 10,
         }}
       >
-        DMC BackOffice — Calificación de Leads
+        <span
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 600,
+            fontSize: 16,
+            letterSpacing: '-0.01em',
+          }}
+        >
+          BackOffice
+        </span>
+        <span style={{ fontSize: 12.5, color: 'var(--color-text-muted)' }}>
+          Calificación de leads — DMC Institute
+        </span>
       </header>
 
       <div style={{ flex: 1, overflow: 'hidden' }}>

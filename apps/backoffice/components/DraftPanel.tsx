@@ -87,47 +87,112 @@ const DraftPanel = ({ leadId, leadEmail }: DraftPanelProps) => {
 
   if (loading) {
     return (
-      <div data-testid="draft-panel-loading" style={{ color: 'var(--color-text-muted)', fontSize: 13 }}>
+      <div
+        data-testid="draft-panel-loading"
+        style={{ color: 'var(--color-text-muted)', fontSize: 13, fontFamily: 'var(--font-mono)' }}
+      >
         Cargando…
       </div>
     )
   }
 
+  const statusColor: Record<string, string> = {
+    pending: 'var(--color-warm)',
+    sent: 'var(--color-success)',
+    discarded: 'var(--color-text-faint)',
+  }
+  const statusBg: Record<string, string> = {
+    pending: 'var(--color-warm-bg)',
+    sent: 'color-mix(in oklab, var(--color-success) 16%, transparent)',
+    discarded: 'var(--color-surface-2)',
+  }
+
+  const primaryButtonStyle = {
+    background: 'var(--color-accent)',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: 6,
+    padding: '7px 14px',
+    fontSize: 13,
+    fontWeight: 500,
+  }
+  const secondaryButtonStyle = {
+    background: 'transparent',
+    color: 'var(--color-text-muted)',
+    border: '1px solid var(--color-border-strong)',
+    borderRadius: 6,
+    padding: '7px 14px',
+    fontSize: 13,
+  }
+
   return (
     <div data-testid="draft-panel" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      {error && <div style={{ color: '#b3261e', fontSize: 12.5 }}>{error}</div>}
+      {error && <div style={{ color: 'var(--color-danger)', fontSize: 12.5 }}>{error}</div>}
 
       {!draft && (
-        <button type="button" data-testid="draft-panel-generate" onClick={generateDraft}>
+        <button type="button" data-testid="draft-panel-generate" onClick={generateDraft} style={primaryButtonStyle}>
           Generar draft
         </button>
       )}
 
       {draft && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ fontWeight: 600, fontSize: 13.5 }}>{draft.subject}</div>
-          <div style={{ whiteSpace: 'pre-wrap', fontSize: 13, color: 'var(--color-text)' }}>{draft.body}</div>
-          <div style={{ fontSize: 11.5, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>
-            {draft.status}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+            padding: 14,
+            borderRadius: 8,
+            border: '1px solid var(--color-border)',
+            background: 'var(--color-surface-2)',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+            <div style={{ fontWeight: 600, fontSize: 13.5 }}>{draft.subject}</div>
+            <span
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: 10.5,
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                padding: '2px 8px',
+                borderRadius: 4,
+                flexShrink: 0,
+                color: statusColor[draft.status],
+                background: statusBg[draft.status],
+              }}
+            >
+              {draft.status}
+            </span>
+          </div>
+          <div style={{ whiteSpace: 'pre-wrap', fontSize: 13, lineHeight: 1.55, color: 'var(--color-text)' }}>
+            {draft.body}
           </div>
 
           {draft.status === 'pending' && (
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
               <button
                 type="button"
                 data-testid="draft-panel-send"
                 onClick={sendDraft}
                 disabled={sending || !leadEmail}
+                style={primaryButtonStyle}
               >
                 {sending ? 'Enviando…' : 'Send'}
               </button>
-              <button type="button" data-testid="draft-panel-discard" onClick={discardDraft}>
+              <button
+                type="button"
+                data-testid="draft-panel-discard"
+                onClick={discardDraft}
+                style={secondaryButtonStyle}
+              >
                 Discard
               </button>
             </div>
           )}
           {!leadEmail && draft.status === 'pending' && (
-            <div style={{ fontSize: 11.5, color: '#b3261e' }}>
+            <div style={{ fontSize: 11.5, color: 'var(--color-danger)' }}>
               Este lead no tiene email — no se puede enviar.
             </div>
           )}

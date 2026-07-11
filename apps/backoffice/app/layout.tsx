@@ -1,16 +1,26 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Space_Grotesk, Inter, IBM_Plex_Mono } from 'next/font/google'
 import './globals.css'
 import { LeadsRuntimeProvider } from '@/lib/LeadsRuntimeProvider'
 
-const geistSans = Geist({
+// Deliberately not Geist/Geist Mono (apps/chat's pairing) — an internal ops board reads
+// differently than a consumer chat: Space Grotesk carries a technical, structural
+// character for headers/labels; Inter stays neutral and dense for lead detail text;
+// IBM Plex Mono marks anything that's data (scores, timestamps, status) as data.
+const displayFont = Space_Grotesk({
   subsets: ['latin'],
-  variable: '--font-geist',
+  variable: '--font-display-loaded',
 })
 
-const geistMono = Geist_Mono({
+const bodyFont = Inter({
   subsets: ['latin'],
-  variable: '--font-geist-mono',
+  variable: '--font-body-loaded',
+})
+
+const monoFont = IBM_Plex_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  variable: '--font-mono-loaded',
 })
 
 export const metadata: Metadata = {
@@ -19,7 +29,10 @@ export const metadata: Metadata = {
 }
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => (
-  <html lang="es-PE" className={`${geistSans.variable} ${geistMono.variable}`}>
+  <html
+    lang="es-PE"
+    className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable}`}
+  >
     <body>
       <LeadsRuntimeProvider>{children}</LeadsRuntimeProvider>
     </body>

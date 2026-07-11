@@ -42,7 +42,8 @@ Verified: `tsc --noEmit` clean.
 Verified: full suite 17/17 passing (3 test files).
 **Files**: `components/KanbanBoard.test.tsx` (`groupLeadsByScore` as a plain function test — three tiers, empty tier renders empty not error per Story 1 AC verified at the pure-function level).
 
-## Step 10 — Visual design pass (NFR-2)
+## Step 10 — Visual design pass (NFR-2) [x]
+Invoked the `frontend-design` skill. Design: cool graphite chrome (not apps/chat's warm navy/gold) with a temperature-scale palette (ember/ochre/steel for hot/warm/cold) as the signature system — columns get a real background wash, not just a colored label, so the board reads as a heat-map. Type: Space Grotesk (display/labels) + Inter (body) + IBM Plex Mono (data/status/timestamps) — deliberately not apps/chat's Geist/Geist Mono pairing. Motion reserved for a single signature: a live pulse dot on Hot leads only (respects `prefers-reduced-motion`). Light + dark mode via the existing `.dark` token-override pattern. Verified: `tsc --noEmit` clean, 17/17 tests still passing, `next build` succeeds, dev server boots and serves the page (confirmed via curl — all 3 kanban columns present in the HTML). **Not verified**: actual visual appearance in a browser — no screenshot/browser tool available in this environment; flagged to the user for a manual look.
 Invoke the `frontend-design` skill to give `apps/backoffice` a distinct "internal tool" identity, aligned to dmc.pe brand guidelines, deliberately not matching `apps/chat`'s consumer-facing navy/gold branding. Updates `app/globals.css` tokens and component styling (inline `style={{ var(--color-*) }}`, same mechanism `apps/chat` uses) — no new component files, styling only.
 
 ---
