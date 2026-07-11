@@ -1271,3 +1271,24 @@ Cada pieza siguió RED (test escrito y verificado fallando por la razón correct
 **Context**: CONSTRUCTION phase, agent-service Incremento 3 — transition from NFR Requirements to NFR Design.
 
 ---
+## agent-service Incremento 3 — NFR Design Plan Created
+**Timestamp**: 2026-07-11T00:00:07Z
+**User Input**: "looks good" (NFR Requirements approval, logged above)
+**AI Response**: Created `aidlc-docs/construction/plans/agent-service-increment3-nfr-design-plan.md` with 2 questions: whether EmailSender.send gets automatic retry-with-backoff (consistent with existing PATTERN-01/14 precedent) or fails fast (consistent with the "no extra retry" stance already chosen for the LLM draft call in Functional Design Q6), and how LeadBroadcaster detects dead /ws/leads connections given the channel is push-only unlike /ws/chat. Justified skipping Scalability/Performance/Security categories as already fully decided in NFR Requirements. Waiting for answers.
+**Context**: CONSTRUCTION phase, agent-service Incremento 3, NFR Design stage — Part 1 (planning).
+
+---
+## agent-service Incremento 3 — NFR Design Artifacts Generated
+**Timestamp**: 2026-07-11T00:00:08Z
+**User Input**: "done" — Q1=A (retry-with-backoff for EmailSender.send, consistent with PATTERN-01/14), Q2=A (lazy dead-connection detection for /ws/leads, no heartbeat)
+**AI Response**: No contradictions. Appended "Incremento 3" sections to nfr-design-patterns.md (PATTERN-21 through PATTERN-28: email retry, explicit no-retry exception for the LLM call, fire-and-forget background generation, lazy WS dead-connection detection, hard 1-replica constraint extending PATTERN-04, email validation before send, draft-content log redaction, atomic send guard) and logical-components.md (LeadQueryService, LeadEventPublisher, LeadBroadcaster, extended LeadRepository, agentic OutreachAgentService, GetCourseDetailsTool, DraftRepository/PostgresDraftRepository, EmailSender/AzureCommunicationServicesEmailSender, plus updated dependency diagram).
+**Context**: CONSTRUCTION phase, agent-service Incremento 3, NFR Design stage — Part 2 (generation).
+
+---
+## NFR Design Approval — agent-service Incremento 3
+**Timestamp**: 2026-07-11T00:00:09Z
+**User Input**: "aprobado"
+**AI Response**: Marked NFR Design (agent-service Incremento 3) COMPLETED and APPROVED in aidlc-state.md. Proceeding to Infrastructure Design stage for this unit.
+**Context**: CONSTRUCTION phase, agent-service Incremento 3 — transition from NFR Design to Infrastructure Design.
+
+---

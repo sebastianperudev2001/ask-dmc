@@ -109,3 +109,53 @@ WebhookHandler ──► SignatureVerifier ──► SecretsProvider (secreto Ke
 
 Todos los componentes ──► StructuredLogger (sin PII, SECURITY-03 reforzado)
 ```
+
+---
+
+# Incremento 3 — Componentes nuevos
+
+## `LeadQueryService`
+Orquesta `list_leads()` — delega directamente en `LeadRepository` (extendido). Sin lógica propia más allá del paso a través (`GET /leads`).
+
+## `LeadEventPublisher`
+Bus pub/sub en memoria, de un solo proceso (PATTERN-25 exige esto). `publish(event)` invoca síncronamente a cada handler suscrito — excepto el de `OutreachAgentService`, que se auto-agenda como tarea en background (PATTERN-23) para no bloquear al publisher.
+
+## `LeadBroadcaster`
+Gestiona el set de conexiones `/ws/leads` activas. Detección de conexiones muertas: perezosa, en el próximo intento de `broadcast()` fallido (PATTERN-24, sin heartbeat). Envía un `snapshot` completo (vía `LeadQueryService`) en cada conexión nueva antes de pasar a modo streaming de eventos.
+
+## `LeadRepository` (extendido)
+Gana `list_leads()` (público, respalda `GET /leads`) y `find_by_id(lead_id)` (interno, usado solo por `OutreachAgentService` — no expuesto vía API).
+
+## `OutreachAgentService`
+Componente agentic (tool-calling), mismo patrón que `ChatOrchestrator`/`Agent` de incremento 2. Métodos: `generate_draft`, `get_active_draft`, `send_draft`, `discard_draft`. Depende de `DraftRepository`, `LeadRepository` (vía `find_by_id`), `GetCourseDetailsTool`, y `EmailSender`.
+
+## `GetCourseDetailsTool`
+Tool agentic invocado por el LLM dentro de `generate_draft` para resolver `course_id → {name, description, curriculum}` (BR-26). Respaldado por el `CourseRepository` ya existente (incremento 1) — mismo patrón que `CollectProfileDataTool`/`CreatePaymentLinkTool`.
+
+## `DraftRepository` (puerto) / `PostgresDraftRepository` (adaptador)
+Persistencia de `OutreachDraft` — nueva tabla `outreach_drafts` en el mismo Postgres. `send_draft` usa el guard atómico de `PATTERN-28` directamente vía este repositorio.
+
+## `EmailSender` (puerto) / `AzureCommunicationServicesEmailSender` (adaptador)
+Envío de emails vía Azure Communication Services. Envuelto en `RetryPolicy` (PATTERN-21) antes de propagar un fallo definitivo.
+
+---
+
+## Diagrama de dependencias — Incremento 3
+
+```
+ChatAgentClient (extendido) ──► LeadEventPublisher.publish(LeadEvent)
+                                        │
+                    ┌───────────────────┴───────────────────┐
+                    ▼                                        ▼
+            LeadBroadcaster                        OutreachAgentService (subscriber,
+                    │                                async background task — PATTERN-23)
+                    ▼                                        │
+        /ws/leads (clientes conectados)                      ├──► DraftRepository ──► ConnectionPool
+                    │                                        ├──► LeadRepository.find_by_id
+        LeadQueryService ──► LeadRepository.list_leads()     ├──► GetCourseDetailsTool ──► CourseRepository
+                    ▲                                        └──► EmailSender ──► RetryPolicy (PATTERN-21)
+                    │
+                GET /leads
+
+Todos los componentes ──► StructuredLogger (sin contenido de draft, PATTERN-27)
+```

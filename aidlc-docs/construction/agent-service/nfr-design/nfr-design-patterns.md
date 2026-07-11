@@ -99,3 +99,44 @@ Consistente con la decisión de NFR Requirements: no se configura túnel ni ruta
 
 ### PATTERN-20 — Sesión de agente por referencia, no por duplicación (Foundry Memory)
 `ConversationSession.service_session_id` es la única referencia a la transcripción completa (gestionada por Foundry Memory) — el backend no duplica el historial de mensajes en Postgres. Solo se persisten datos derivados (`Lead`: perfil, motivación, score) más la referencia de sesión, evitando doble fuente de verdad de la conversación.
+
+---
+
+# Incremento 3 — BackOffice: read path + broadcast en tiempo real + agente de outreach
+
+**Fecha**: 2026-07-11
+
+## 8. Patrones de Resiliencia — extensiones
+
+### PATTERN-21 — Retry con backoff para `EmailSender.send` (Azure Communication Services)
+Consistente con `PATTERN-01`/`PATTERN-14` (no con la excepción deliberada de la llamada LLM de `generate_draft`, ver más abajo): `send_draft` envuelve `EmailSender.send` con el mismo `RetryPolicy` (backoff exponencial) ya usado para otras llamadas externas. Solo tras agotar los reintentos el draft permanece en `status = "pending"` y el error se propaga a la UI (NFR Requirements Sección 16) — los reintentos ocurren primero, el fallback manual (botón "Send") sigue siendo el mismo.
+
+### PATTERN-22 — Sin retry automático para la llamada LLM de `generate_draft` (excepción explícita a PATTERN-21)
+A diferencia de `EmailSender.send`, la llamada agentic dentro de `generate_draft` (Functional Design, Sección 21) **no** se envuelve en `RetryPolicy` — un solo intento fallido propaga el error de inmediato (on-demand) o se loggea y absorbe (trigger automático, BR-27). Decisión explícita del usuario en Functional Design (Question 6 = A), mantenida deliberadamente distinta del tratamiento de `EmailSender.send` — la llamada LLM ya es más costosa/lenta, y el patrón fire-and-forget (`PATTERN-23`) del trigger automático hace que un reintento automático agregue latencia sin un beneficio claro para el caso de uso.
+
+### PATTERN-23 — Generación de draft en background (fire-and-forget) para el trigger automático
+El subscriber de `OutreachAgentService` a `LeadEventPublisher` no bloquea al publisher: `generate_draft(lead_id, trigger="auto")` se agenda como `asyncio.create_task(...)` en vez de ser `await`ado dentro del callback (BR-24). Esto desacopla la latencia de la llamada agentic (Sección 21 de business-logic-model.md) del turno de chat en `apps/chat` que disparó el cambio de score.
+
+### PATTERN-24 — Detección perezosa de conexiones muertas en `/ws/leads`
+A diferencia de `/ws/chat` (bidireccional), `/ws/leads` es un canal solo de push — el servidor transmite snapshots/eventos, el cliente no envía mensajes de aplicación. `LeadBroadcaster` no implementa heartbeat/ping-pong activo: una conexión caída se detecta y se remueve del set de broadcast recién en el próximo intento de envío fallido. Simple y consistente con el sesgo de infraestructura mínima del proyecto — aceptable porque reconectar es barato (el cliente siempre recibe un snapshot fresco al reconectar, Story 3 AC), aunque la limpieza del set de conexiones pueda demorar levemente tras una caída silenciosa.
+
+## 9. Patrones de Escalabilidad — extensiones
+
+### PATTERN-25 — Instancia única obligatoria (`min=max=1` réplica) para correctitud de `/ws/leads`
+Extiende `PATTERN-04` (que solo garantizaba "mínimo 1 réplica" por costo/cold-start): en este incremento, `agent-service` debe fijarse en **exactamente 1 réplica** (`minReplicas = maxReplicas = 1` en Container Apps), porque `LeadEventPublisher`/`LeadBroadcaster` son en memoria y de un solo proceso — un evento publicado en una réplica nunca llega a un cliente conectado a otra. A diferencia de `PATTERN-05` (afinidad de conexión WS, que toleraba escalar mientras cada conexión individual quedara pegada a su réplica), este patrón bloquea el escalado horizontal por completo hasta que se introduzca un pub/sub externo (fuera de alcance, ver `nfr-requirements.md` Sección 17).
+
+## 10. Patrones de Seguridad — extensiones
+
+### PATTERN-26 — Validación de email antes de enviar (fail-safe default)
+Extiende el espíritu de `PATTERN-03`: `send_draft` valida que `Lead.email` no esté vacío *antes* de invocar `EmailSender.send` — si está vacío, rechaza con un error de validación sin siquiera intentar el envío (BR-28). `EmailSender.send` nunca se invoca con un destinatario vacío, por diseño, no por manejo de excepción reactivo.
+
+### PATTERN-27 — Redacción de contenido de draft en logs
+Extiende `PATTERN`s de logging sin PII ya establecidos (`SECURITY-03`): `OutreachDraft.subject`/`body` nunca se escriben en texto plano en logs de aplicación — solo `draft_id`/`lead_id`/`status`/`trigger`.
+
+## 11. Patrones de Confiabilidad — extensiones
+
+### PATTERN-28 — Guard atómico de envío único (`send_draft`)
+`send_draft` ejecuta `UPDATE outreach_drafts SET status = 'sent', sent_at = now() WHERE draft_id = :id AND status = 'pending'` — si la actualización afecta 0 filas, no se invoca `EmailSender.send` una segunda vez; se retorna el draft ya actualizado. Complementa (no reemplaza) el estado de carga en el frontend (`DraftPanel`, mecanismo primario de UX) — mismo espíritu de defensa en profundidad que `PATTERN-18` (fuente de verdad post-webhook).
+
+## Resumen de compliance — Incremento 3 (heredado de NFR Requirements, sin cambios)
+Ver `nfr-requirements.md` Sección 19 (tabla SECURITY-01/03/06/11 + NFR-1) — todas las filas siguen aplicando sin cambios a los nuevos componentes de este incremento.
