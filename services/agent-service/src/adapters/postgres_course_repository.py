@@ -20,6 +20,13 @@ _FIND_RANKED_CANDIDATES_QUERY = """
 
 _CATALOG_COUNT_QUERY = "SELECT count(*) FROM courses"
 
+# Incremento 3 (BackOffice) — GetCourseDetailsTool (BR-26)
+_FIND_BY_ID_QUERY = """
+    SELECT course_id, name, description, category, curriculum, price, duration_weeks
+    FROM courses
+    WHERE course_id = $1
+"""
+
 
 def _embedding_to_pgvector_literal(embedding: tuple[float, ...]) -> str:
     return "[" + ",".join(repr(value) for value in embedding) + "]"
@@ -49,6 +56,21 @@ class PostgresCourseRepository:
     async def catalog_is_empty(self) -> bool:
         count = await self._connection_pool.pool.fetchval(_CATALOG_COUNT_QUERY)
         return count == 0
+
+    async def find_by_id(self, course_id: str) -> Course | None:
+        row = await self._connection_pool.pool.fetchrow(_FIND_BY_ID_QUERY, course_id)
+        if row is None:
+            return None
+        return Course(
+            course_id=row["course_id"],
+            name=row["name"],
+            description=row["description"],
+            category=row["category"],
+            curriculum=tuple(row["curriculum"]),
+            price=row["price"],
+            duration_weeks=row["duration_weeks"],
+            embedding=None,
+        )
 
     @staticmethod
     def _row_to_candidate(row) -> RecommendationCandidate:

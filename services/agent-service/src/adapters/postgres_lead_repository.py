@@ -42,6 +42,10 @@ _MARK_PAYMENT_CONFIRMED_QUERY = """
     WHERE id = $1
 """
 
+# Incremento 3 (BackOffice)
+_LIST_LEADS_QUERY = "SELECT * FROM leads ORDER BY created_at DESC"
+_FIND_BY_ID_QUERY = "SELECT * FROM leads WHERE id = $1"
+
 
 class PostgresLeadRepository:
     def __init__(self, connection_pool: ConnectionPool) -> None:
@@ -82,6 +86,18 @@ class PostgresLeadRepository:
         await self._connection_pool.pool.execute(
             _MARK_PAYMENT_CONFIRMED_QUERY, lead_id, datetime.now(timezone.utc), payment_id
         )
+
+    # ── Incremento 3 — BackOffice ──
+
+    async def list_leads(self) -> list[Lead]:
+        rows = await self._connection_pool.pool.fetch(_LIST_LEADS_QUERY)
+        return [self._row_to_lead(row) for row in rows]
+
+    async def find_by_id(self, lead_id: str) -> Lead | None:
+        row = await self._connection_pool.pool.fetchrow(_FIND_BY_ID_QUERY, lead_id)
+        if row is None:
+            return None
+        return self._row_to_lead(row)
 
     @staticmethod
     def _row_to_lead(row) -> Lead:

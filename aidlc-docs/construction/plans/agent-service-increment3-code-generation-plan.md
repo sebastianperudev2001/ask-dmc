@@ -24,7 +24,7 @@
 - `services/agent-service/src/ports/draft_repository.py` (create): `save`, `find_active_by_lead_id`, `find_by_id`, and an atomic `mark_sent(draft_id) -> OutreachDraft | None` (returns `None` if the row wasn't `pending` — backs PATTERN-28)
 - `services/agent-service/src/ports/email_sender.py` (create): `send(to_email, subject, body) -> None`
 
-## Step 4 — Repository adapters
+## Step 4 — Repository adapters [x]
 - `services/agent-service/src/adapters/postgres_lead_repository.py` (modify): implement `list_leads`, `find_by_id`
 - `services/agent-service/src/adapters/postgres_course_repository.py` (modify): implement `find_by_id`
 - `services/agent-service/src/adapters/postgres_draft_repository.py` (create): implement the port against a new `outreach_drafts` table; `mark_sent` uses `UPDATE ... WHERE status = 'pending' RETURNING *`
