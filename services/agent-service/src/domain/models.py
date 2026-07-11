@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
+from typing import Literal
 
 
 class RecommendationBranch(str, Enum):
@@ -181,3 +182,44 @@ class ConversationSummary:
     preview: str
     started_at: datetime
     last_activity_at: datetime
+
+
+# ── Incremento 3 — BackOffice: read path + broadcast + agente de outreach ──
+
+
+class DraftStatus(str, Enum):
+    """BR-22: solo `PENDING` cuenta como draft activo para efectos de dedupe."""
+
+    PENDING = "pending"
+    SENT = "sent"
+    DISCARDED = "discarded"
+
+
+class DraftTrigger(str, Enum):
+    AUTO = "auto"
+    ON_DEMAND = "on_demand"
+
+
+@dataclass
+class OutreachDraft:
+    """Ciclo de vida independiente de `Lead` (BR-22). Mutable, igual que `Lead` — el
+    status cambia in-place (pending -> sent/discarded)."""
+
+    draft_id: str
+    lead_id: str
+    subject: str
+    body: str
+    created_at: datetime
+    status: DraftStatus = DraftStatus.PENDING
+    trigger: DraftTrigger = DraftTrigger.ON_DEMAND
+    sent_at: datetime | None = None
+
+
+@dataclass(frozen=True)
+class LeadEvent:
+    """Efímero, nunca persistido — solo en memoria (`LeadEventPublisher`). Lleva el
+    `Lead` completo (BR-29), no solo `lead_id`/score, para que `LeadBroadcaster` y el
+    frontend no necesiten un lookup adicional."""
+
+    event_type: Literal["created", "score_changed"]
+    lead: Lead
