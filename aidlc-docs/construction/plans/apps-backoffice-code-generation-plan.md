@@ -22,7 +22,8 @@ Also update root `.gitignore` (add `apps/backoffice/.next/`, `node_modules/`, `.
 ## Step 4 — Data layer (Effect) — WS implementation + runtime [x]
 **Files**: `lib/WsLeadsService.ts` (`WsLeadsServiceLive`, `toLeadWireEvent` translation function — mirrors `WsChatService.ts`'s `toChatEvent` shape exactly), `lib/leadsRuntime.ts` (`LeadsAppRuntime = ManagedRuntime.make(WsLeadsServiceLive)`), `lib/LeadsRuntimeProvider.tsx`.
 
-## Step 5 — Data layer unit tests
+## Step 5 — Data layer unit tests [x]
+Verified: 6/6 passing.
 **File**: `lib/WsLeadsService.test.ts` — `toLeadWireEvent` translation (snapshot, lead_event/created, lead_event/score_changed, unknown type → null), hand-rolled `FakeWebSocket` (mirrors `WsChatService.test.ts`'s pattern).
 
 ## Step 6 — `useLeadsSocket` hook (pure reducers + hook)
