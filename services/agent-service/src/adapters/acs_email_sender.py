@@ -16,9 +16,21 @@ class AzureCommunicationServicesEmailSender:
     def __init__(
         self, connection_string: str, *, sender_address: str, retry_policy: RetryPolicy
     ) -> None:
-        self._client = EmailClient.from_connection_string(connection_string)
+        # Lazy: ACS_CONNECTION_STRING is empty until the real resource is provisioned
+        # (`terraform apply` not yet run — see infra/agent-service/main.tf). Building
+        # EmailClient eagerly here would break local dev entirely (the SDK validates
+        # the connection string format at construction time), the same reason
+        # MercadoPagoPaymentClient tolerates an empty access_token until an actual call
+        # is made.
+        self._connection_string = connection_string
+        self._client: EmailClient | None = None
         self._sender_address = sender_address
         self._retry_policy = retry_policy
+
+    def _get_client(self) -> EmailClient:
+        if self._client is None:
+            self._client = EmailClient.from_connection_string(self._connection_string)
+        return self._client
 
     async def send(self, to_email: str, subject: str, body: str) -> None:
         message = {
@@ -28,7 +40,7 @@ class AzureCommunicationServicesEmailSender:
         }
 
         async def _send() -> None:
-            poller = await self._client.begin_send(message)
+            poller = await self._get_client().begin_send(message)
             await poller.result()
 
         await self._retry_policy.run(_send)

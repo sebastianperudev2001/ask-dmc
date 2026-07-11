@@ -71,7 +71,8 @@
 - `tests/unit/test_acs_email_sender.py` (create): retry-with-backoff behavior via `RetryPolicy`
 - `tests/unit/test_schemas.py` (modify): new response/request models (Step 13)
 
-## Step 13 — API schemas + routes
+## Step 13 — API schemas + routes [x]
+**Gap found and fixed during generation**: `AzureCommunicationServicesEmailSender.__init__` originally called `EmailClient.from_connection_string` eagerly — since `main.py` wires it up as a module-level singleton (Step 13) and `ACS_CONNECTION_STRING` is empty until `terraform apply` actually runs, this broke `main.py` import entirely (verified: raised `ValueError` on import). Fixed by making the client lazy (built on first `.send()` call) — same reasoning `MercadoPagoPaymentClient` already relies on for an empty access token. Also folded in Step 18 (config.py: `acs_connection_string`/`acs_sender_address`) here since routes/wiring needed it immediately.
 **File**: `services/agent-service/src/api/schemas.py` (modify): add `LeadResponse`, `LeadListResponse`, `OutreachDraftResponse`
 **File**: `services/agent-service/main.py` (modify):
 - `lead_event_publisher = LeadEventPublisher()` and `lead_broadcaster = LeadBroadcaster(...)` as module-level singletons (like `connection_pool`) — must be shared across all `/ws/leads` connections and wired into `build_chat_websocket_handler`'s `agent_client_factory` so `ChatAgentClient` gets the same publisher instance
@@ -96,7 +97,8 @@
 **File**: `services/agent-service/migrations/004_create_outreach_drafts.sql` (create)
 - `outreach_drafts` table: `draft_id UUID PK, lead_id UUID FK -> leads, subject TEXT, body TEXT, status TEXT, trigger TEXT, created_at TIMESTAMPTZ, sent_at TIMESTAMPTZ NULL`; partial unique index enforcing at most one `pending` row per `lead_id` (belt-and-suspenders alongside the application-level dedupe check, BR-22)
 
-## Step 18 — Config
+## Step 18 — Config [x]
+**Note**: executed early, as part of Step 13 (see note there).
 **File**: `services/agent-service/src/config.py` (modify): add `acs_connection_string` (from `ACS_CONNECTION_STRING` env var, matches `main.tf`'s Step 13 wiring from Infrastructure Design)
 
 ---

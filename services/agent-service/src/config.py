@@ -32,6 +32,13 @@ class AgentServiceConfig:
     mercadopago_webhook_secret: str
     mercadopago_base_url: str
     profile_data_timeout_seconds: float
+    # Incremento 3 — BackOffice (NFR Requirements Sección 14, Infrastructure Design
+    # Sección 12): connection string resuelto desde el secreto de Key Vault
+    # acs-connection-string en producción; ACS_SENDER_ADDRESS proviene del dominio
+    # administrado por Azure provisionado en main.tf (conocido recién tras `terraform
+    # apply`, aún no ejecutado — ver infra/agent-service/main.tf).
+    acs_connection_string: str
+    acs_sender_address: str
 
 
 def load_config() -> AgentServiceConfig:
@@ -74,4 +81,6 @@ def load_config() -> AgentServiceConfig:
         profile_data_timeout_seconds=float(
             os.environ.get("PROFILE_DATA_TIMEOUT_SECONDS", "300")
         ),
+        acs_connection_string=os.environ.get("ACS_CONNECTION_STRING", ""),
+        acs_sender_address=os.environ.get("ACS_SENDER_ADDRESS", ""),
     )

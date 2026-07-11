@@ -1,8 +1,12 @@
-"""AzureCommunicationServicesEmailSender — EmailClient is patched at construction time
-(no real network calls); only the RetryPolicy wiring (PATTERN-21) is under test."""
+"""AzureCommunicationServicesEmailSender — the underlying EmailClient is lazily built
+(see acs_email_sender.py docstring: ACS_CONNECTION_STRING is empty until the real
+resource is provisioned, so eager construction would break local dev entirely). Tests
+bypass that lazy-init by injecting a fake client directly via `_get_client`, rather than
+patching the real `EmailClient.from_connection_string` — only the RetryPolicy wiring
+(PATTERN-21) is under test, never real network calls."""
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -13,14 +17,13 @@ pytestmark = pytest.mark.asyncio
 
 
 def _build_sender(client: MagicMock) -> AzureCommunicationServicesEmailSender:
-    with patch(
-        "src.adapters.acs_email_sender.EmailClient.from_connection_string", return_value=client
-    ):
-        return AzureCommunicationServicesEmailSender(
-            "endpoint=https://fake;accesskey=fake",
-            sender_address="DoNotReply@fake.azurecomm.net",
-            retry_policy=RetryPolicy(max_attempts=3, base_delay_seconds=0.001),
-        )
+    sender = AzureCommunicationServicesEmailSender(
+        "endpoint=https://fake;accesskey=fake",
+        sender_address="DoNotReply@fake.azurecomm.net",
+        retry_policy=RetryPolicy(max_attempts=3, base_delay_seconds=0.001),
+    )
+    sender._get_client = lambda: client
+    return sender
 
 
 async def test_send_calls_begin_send_with_the_expected_message():
