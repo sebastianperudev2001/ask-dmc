@@ -26,7 +26,7 @@ Also update root `.gitignore` (add `apps/backoffice/.next/`, `node_modules/`, `.
 Verified: 6/6 passing.
 **File**: `lib/WsLeadsService.test.ts` — `toLeadWireEvent` translation (snapshot, lead_event/created, lead_event/score_changed, unknown type → null), hand-rolled `FakeWebSocket` (mirrors `WsChatService.test.ts`'s pattern).
 
-## Step 6 — `useLeadsSocket` hook (pure reducers + hook)
+## Step 6 — `useLeadsSocket` hook (pure reducers + hook) [x]
 **File**: `hooks/useLeadsSocket.ts` — `applyLeadWireEvent`, `deriveNotification` (exported pure functions, Functional Design Section 3), the hook itself (subscribes once via `runtime.runFork`, cleans up via `Fiber.interrupt`, same shape as `useChat`'s WS-subscription `useEffect`).
 
 ## Step 7 — Hook unit tests
