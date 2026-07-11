@@ -42,7 +42,7 @@
 **File**: `services/agent-service/src/adapters/acs_email_sender.py` (create)
 - `AzureCommunicationServicesEmailSender` implementing `EmailSender`, wrapped in the existing `RetryPolicy` (PATTERN-21), reading `ACS_CONNECTION_STRING` from config
 
-## Step 8 — Outreach agent service
+## Step 8 — Outreach agent service [x]
 **File**: `services/agent-service/src/adapters/outreach_agent_service.py` (create)
 - `OutreachAgentService`, mirrors `ChatAgentClient`'s agent/tool-calling shape exactly (`FoundryChatClient` + `Agent` + `tool(...)`)
 - `_get_course_details` tool method → `CourseRepository.find_by_id`
