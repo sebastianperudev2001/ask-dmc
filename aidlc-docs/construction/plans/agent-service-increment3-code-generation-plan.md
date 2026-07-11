@@ -59,7 +59,8 @@
 **File**: `services/agent-service/src/api/lead_broadcaster.py` (create)
 - `LeadBroadcaster`: maintains the `/ws/leads` connection set; `handle_connection(websocket)` sends a `snapshot` (via `LeadQueryService`) then streams `lead_event` messages; `broadcast(event)` iterates connections, drops ones whose send fails (PATTERN-24, lazy detection, no heartbeat)
 
-## Step 11 — Lead query service (domain/orchestration)
+## Step 11 — Lead query service (domain/orchestration) [x]
+**Note**: executed before Step 10 — `LeadBroadcaster`'s snapshot needs `LeadQueryService` to exist first.
 **File**: `services/agent-service/src/domain/lead_query_service.py` (create)
 - `LeadQueryService.list_leads()` → thin pass-through to `LeadRepository.list_leads()`
 
