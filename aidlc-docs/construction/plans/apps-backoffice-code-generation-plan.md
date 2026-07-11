@@ -33,7 +33,8 @@ Verified: 6/6 passing.
 Verified: 8/8 passing.
 **File**: `hooks/useLeadsSocket.test.ts` — `applyLeadWireEvent` (snapshot replaces, lead_event upserts by id), `deriveNotification` (hot → Notification, warm/cold/created → null) tested as plain functions, no WS mock needed (same convention as `applyDelta`/`messagesFromHistory` tests).
 
-## Step 8 — Components
+## Step 8 — Components [x]
+Verified: `tsc --noEmit` clean.
 **Files** (all new, `components/`): `KanbanBoard.tsx` (+ exported pure `groupLeadsByScore`), `LeadCard.tsx`, `LeadDetailModal.tsx`, `DraftPanel.tsx`, `NotificationCenter.tsx`, `BackofficeApp.tsx` (top-level, sole `useLeadsSocket()` call site — mirrors `ChatApp.tsx`'s role).
 `DraftPanel` calls `GET/POST` against `NEXT_PUBLIC_API_URL` directly (`fetch`) — no Effect involved here (Functional Design confines Effect to the WS layer only, matching `apps/chat`'s precedent where `fetchConversationHistory`/`fetchConversations` are plain `fetch` too).
 
