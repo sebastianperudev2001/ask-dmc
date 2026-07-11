@@ -13,7 +13,7 @@
 **Files** (all new): `package.json` (name `dmc-backoffice`, same scripts/deps as `apps/chat` minus `react-markdown`), `tsconfig.json`, `next.config.ts`, `postcss.config.mjs`, `vitest.config.ts`, `vitest.setup.ts`, `.env.example`/`.env.local` (`NEXT_PUBLIC_WS_URL=ws://localhost:8000/ws/leads`, `NEXT_PUBLIC_API_URL=http://localhost:8000`), `app/layout.tsx`, `app/globals.css` (base reset + neutral placeholder tokens — real visual identity comes in Step 9 via the `frontend-design` skill), `app/page.tsx` (renders `BackofficeApp`).
 Also update root `.gitignore` (add `apps/backoffice/.next/`, `node_modules/`, `.env.local` entries, mirroring the existing `apps/chat` block).
 
-## Step 2 — Wire types
+## Step 2 — Wire types [x]
 **File**: `types/leads.ts` (new) — `LeadOut`, `OutreachDraftOut` (camelCase, mirrors the snake_case→camelCase translation boundary pattern from `apps/chat`'s `types/chat.ts`), `Notification`.
 
 ## Step 3 — Data layer (Effect) — service + errors
