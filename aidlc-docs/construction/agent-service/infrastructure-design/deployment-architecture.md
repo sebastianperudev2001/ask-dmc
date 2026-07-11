@@ -67,3 +67,16 @@ El diagrama de despliegue de incremento 1 sigue siendo válido sin cambios estru
 - Llamadas salientes nuevas hacia `api.mercadopago.com` (Orders/Preferences, `GET /v1/payments/{id}`) — mismo patrón saliente que ya existe hacia Azure OpenAI/Foundry
 
 Ningún recurso Terraform nuevo se agrega al resource group `rg-dmc-agent-service` más allá de: 2 secrets nuevos en el Key Vault ya existente y la migración de Postgres (tablas, no servidor). El estado de "Terraform sin aplicar" (`infra/agent-service/*.tf`) se mantiene igual que en incremento 1 — este incremento tampoco se despliega a Azure real, se verifica en local (decisión ya tomada en Requirements Analysis).
+
+---
+
+# Incremento 3 — Un recurso nuevo (Azure Communication Services), resto sin cambios de topología
+
+**Fecha**: 2026-07-11
+
+A diferencia de incremento 2, este sí agrega un recurso Azure genuinamente nuevo al resource group `rg-dmc-agent-service`: Azure Communication Services (Email), con dominio administrado por Azure (ver `infrastructure-design.md` Sección 12). Dentro del mismo `agent-service` (Container App):
+- Rutas `GET /leads` y `/ws/leads` (nuevas, mismo proceso FastAPI, mismo ingress)
+- Llamadas salientes nuevas hacia Azure Communication Services (envío de email)
+- `max_replicas` baja de 3 a 1 — restricción dura, no solo económica (Sección 13 de `infrastructure-design.md`)
+
+El estado de "Terraform sin aplicar" se mantiene: los recursos de ACS están definidos en `main.tf` pero no creados en Azure real — este incremento tampoco se despliega, se verifica en local (mismo alcance que incrementos 1 y 2, decisión ya tomada en Requirements Analysis y reafirmada aquí).

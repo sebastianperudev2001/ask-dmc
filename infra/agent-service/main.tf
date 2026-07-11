@@ -56,6 +56,16 @@ resource "azurerm_key_vault_secret" "mercadopago_webhook_secret" {
   key_vault_id = azurerm_key_vault.main.id
 }
 
+# Incremento 3 — secreto para el connection string de Azure Communication Services
+# (EmailSender/AzureCommunicationServicesEmailSender, NFR Design PATTERN-21). A
+# diferencia de los secretos de Mercado Pago (credenciales externas, vía variable),
+# este connection string lo genera el propio recurso ACS provisionado abajo.
+resource "azurerm_key_vault_secret" "acs_connection_string" {
+  name         = "acs-connection-string"
+  value        = azurerm_communication_service.main.primary_connection_string
+  key_vault_id = azurerm_key_vault.main.id
+}
+
 # --- Database (SECURITY-01: encryption at rest/in-transit by default) ---
 
 resource "azurerm_postgresql_flexible_server" "main" {
@@ -116,6 +126,37 @@ resource "azurerm_cognitive_deployment" "embedding" {
   }
 }
 
+# --- Email (Incremento 3 — EmailSender port, NFR Requirements Sección 14) ---
+#
+# Dominio Azure Managed (auto-verificado, sin trabajo de DNS) — decisión del AI en vez
+# del usuario (ver audit.md, Infrastructure Design, Incremento 3: usuario pidió avanzar
+# rápido y delegó las 3 preguntas restantes de esta etapa). Un dominio personalizado
+# (subdominio de dmc.pe, remitente con marca DMC) queda como mejora manual futura —
+# requeriría verificación DNS (SPF/DKIM/DMARC) fuera del alcance de este Terraform.
+# Escrito pero no aplicado, mismo criterio que el resto de este archivo.
+resource "azurerm_email_communication_service" "main" {
+  name                = "ecs-dmc-agent-service"
+  resource_group_name = azurerm_resource_group.main.name
+  data_location        = "United States"
+}
+
+resource "azurerm_email_communication_service_domain" "managed" {
+  name              = "AzureManagedDomain"
+  email_service_id  = azurerm_email_communication_service.main.id
+  domain_management = "AzureManaged"
+}
+
+resource "azurerm_communication_service" "main" {
+  name                = "acs-dmc-agent-service"
+  resource_group_name = azurerm_resource_group.main.name
+  data_location       = "United States"
+
+  # Vincula el dominio de email administrado — sintaxis exacta a verificar contra la
+  # versión del provider azurerm al momento de aplicar (mismo tipo de nota ya dejada
+  # para FOUNDRY_PROJECT_ENDPOINT más abajo: soporte de recursos nuevos de Azure a
+  # veces va por delante o por detrás del provider de Terraform).
+}
+
 # --- Compute ---
 
 resource "azurerm_container_app_environment" "main" {
@@ -149,9 +190,19 @@ resource "azurerm_container_app" "agent_service" {
     identity            = "System"
   }
 
+  # Incremento 3
+  secret {
+    name                = "acs-connection-string"
+    key_vault_secret_id = azurerm_key_vault_secret.acs_connection_string.id
+    identity            = "System"
+  }
+
   template {
     min_replicas = 1 # PATTERN-04 — protects the <=3s first-delta NFR against cold start
-    max_replicas = 3
+    max_replicas = 1 # Incremento 3, PATTERN-25 — restricción DURA de correctitud, no solo
+    # de costo: LeadEventPublisher/LeadBroadcaster son en memoria y de un solo proceso;
+    # escalar a >1 réplica rompe /ws/leads (un evento publicado en una réplica nunca
+    # llega a un cliente conectado a otra). No cambiar sin introducir un pub/sub externo.
 
     container {
       name   = "agent-service"
@@ -188,6 +239,11 @@ resource "azurerm_container_app" "agent_service" {
       env {
         name        = "MERCADOPAGO_WEBHOOK_SECRET"
         secret_name = "mercadopago-webhook-secret"
+      }
+      # Incremento 3
+      env {
+        name        = "ACS_CONNECTION_STRING"
+        secret_name = "acs-connection-string"
       }
       # FOUNDRY_PROJECT_ENDPOINT: set once the AI Foundry project is provisioned.
       # Investigado (2026-07-05): azurerm_ai_foundry/azurerm_ai_foundry_project SÍ existen,

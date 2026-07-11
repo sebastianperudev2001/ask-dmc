@@ -1292,3 +1292,24 @@ Cada pieza siguió RED (test escrito y verificado fallando por la razón correct
 **Context**: CONSTRUCTION phase, agent-service Incremento 3 — transition from NFR Design to Infrastructure Design.
 
 ---
+## agent-service Incremento 3 — Infrastructure Design Plan Created
+**Timestamp**: 2026-07-11T00:00:10Z
+**User Input**: "aprobado" (NFR Design approval, logged above)
+**AI Response**: Created `aidlc-docs/construction/plans/agent-service-increment3-infrastructure-design-plan.md` with 3 questions: whether to actually update infra/agent-service/main.tf's max_replicas now (written-but-not-applied precedent from Incremento 2), how to provision Azure Communication Services (managed vs custom domain vs fully deferred), and migration SQL timing (Code Generation, per established convention, or now). Justified skipping Deployment Environment/Messaging/Networking/Monitoring/Shared Infrastructure categories as unchanged from prior increments. Waiting for answers.
+**Context**: CONSTRUCTION phase, agent-service Incremento 3, Infrastructure Design stage — Part 1 (planning).
+
+---
+## agent-service Incremento 3 — Infrastructure Design: AI-decided (user asked to skip ahead)
+**Timestamp**: 2026-07-11T00:00:11Z
+**User Input**: "dude how much more to start building wtf"
+**AI Response**: User asked to move faster. Answered all 3 remaining plan questions as the AI rather than round-tripping: Q1=A (update main.tf now), Q2=C (write Terraform resource defs now, Azure Managed Domain chosen as the concrete default since it needs no manual DNS step, unlike a custom dmc.pe domain which the AI has no DNS access to configure), Q3=A (migration SQL written during Code Generation, per existing convention). Implemented directly in infra/agent-service/main.tf: new azurerm_communication_service/azurerm_email_communication_service/azurerm_email_communication_service_domain resources (Azure Managed Domain), new Key Vault secret acs-connection-string wired into the Container App as ACS_CONNECTION_STRING, and template.max_replicas reduced from 3 to 1 (PATTERN-25, correctness constraint not just cost). Terraform written but not applied, same posture as all prior increments. Generated Incremento 3 sections in infrastructure-design.md and deployment-architecture.md.
+**Context**: CONSTRUCTION phase, agent-service Incremento 3, Infrastructure Design stage — AI made low-risk tech decisions to keep momentum per explicit user request, all logged and reversible.
+
+---
+## Infrastructure Design Approval — agent-service Incremento 3
+**Timestamp**: 2026-07-11T00:00:12Z
+**User Input**: "aprobado"
+**AI Response**: Marked Infrastructure Design (agent-service Incremento 3) COMPLETED and APPROVED in aidlc-state.md. Proceeding to Code Generation stage for this unit.
+**Context**: CONSTRUCTION phase, agent-service Incremento 3 — transition from Infrastructure Design to Code Generation.
+
+---

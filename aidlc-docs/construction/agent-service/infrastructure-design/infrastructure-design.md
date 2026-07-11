@@ -97,3 +97,46 @@ Nueva migración (ej. `migrations/002_create_leads_and_sessions.sql`) que agrega
 
 ## 10. Costos — incremental (Incremento 2)
 - Sin costo de infraestructura nuevo (mismo Container App/Postgres/Key Vault). Costo adicional: llamadas a la API de Mercado Pago (sandbox, sin costo real) y el volumen extra de tokens del LLM por la conversación más larga (tool-calling) — mismo modelo económico (`gpt-5.4-nano`) ya elegido.
+
+---
+
+# Incremento 3 — BackOffice: read path + broadcast en tiempo real + agente de outreach
+
+**Fecha**: 2026-07-11
+**Nota de proceso**: las 3 preguntas de esta etapa fueron respondidas por el AI (no por el usuario), a pedido explícito del usuario de avanzar más rápido — ver `audit.md`. Decisiones: (1) `main.tf` se actualiza ahora, no solo se documenta; (2) el dominio de email es Azure Managed (auto-verificado, sin trabajo de DNS) en vez de un dominio personalizado de dmc.pe, que hubiera requerido verificación manual fuera del alcance de Terraform; (3) la migración SQL de `outreach_drafts` se escribe en Code Generation, no aquí — mismo criterio que incrementos 1/2.
+
+## 11. Mapeo de componentes lógicos nuevos → recursos Azure
+
+| Componente lógico (NFR Design, Incremento 3) | Servicio Azure | Notas |
+|---|---|---|
+| `LeadQueryService` / `LeadBroadcaster` | Azure Container Apps (mismo Container App) | Nuevas rutas `GET /leads` y `/ws/leads` en el mismo proceso FastAPI — sin recurso nuevo |
+| `LeadEventPublisher` | N/A (en memoria, mismo proceso) | Ninguna infraestructura propia — es la razón de PATTERN-25 (instancia única obligatoria, ver Sección 13) |
+| `OutreachAgentService` / `GetCourseDetailsTool` | Azure AI Foundry (mismo recurso Persistent Agent) | Nuevo agente/rol de sistema para outreach, reutiliza el mismo Foundry Persistent Agent y modelo (`gpt-5.4-nano`) ya provisionado — sin recurso nuevo |
+| `DraftRepository` | Azure Database for PostgreSQL Flexible Server (mismo servidor, misma base) | Nueva migración: tabla `outreach_drafts` — escrita en Code Generation (Q3 de esta etapa), no requiere servidor nuevo |
+| `EmailSender` / `AzureCommunicationServicesEmailSender` | **Azure Communication Services (Email) — recurso nuevo** | Ver Sección 12 |
+
+## 12. Recurso nuevo: Azure Communication Services (Email)
+A diferencia de todos los recursos anteriores de este proyecto (que reutilizaban infraestructura existente), este incremento agrega un recurso Azure genuinamente nuevo: `azurerm_communication_service` + `azurerm_email_communication_service` + `azurerm_email_communication_service_domain` (dominio administrado por Azure, `domain_management = "AzureManaged"`) en `infra/agent-service/main.tf`. El connection string resultante (`azurerm_communication_service.main.primary_connection_string`) se guarda como un nuevo secreto de Key Vault (`acs-connection-string`) y se referencia desde el Container App como `ACS_CONNECTION_STRING` — mismo patrón ya establecido para los secretos de Mercado Pago (PATTERN-11).
+
+**Alternativa descartada**: dominio personalizado (subdominio de dmc.pe, remitente con marca real) — requeriría verificación DNS manual (SPF/DKIM/DMARC) fuera del alcance de Terraform; queda como mejora futura si se decide dar identidad de marca al remitente antes de cualquier despliegue real.
+
+**Escrito, no aplicado**: como el resto de este archivo, estos recursos están definidos en Terraform pero `terraform apply` no se ha ejecutado — mismo estado que Postgres/Key Vault/Foundry desde incremento 1.
+
+## 13. Cómputo — restricción de réplica única (PATTERN-25)
+`template.max_replicas` en `azurerm_container_app.agent_service` baja de `3` a `1` (antes: `min_replicas = 1, max_replicas = 3`; ahora: `min_replicas = 1, max_replicas = 1`). A diferencia del resto de las decisiones de este proyecto (donde "1 réplica" era una protección de cold-start, PATTERN-04), esta vez es una restricción de **correctitud obligatoria**: escalar por encima de 1 réplica rompería `/ws/leads` silenciosamente (eventos publicados en una réplica nunca llegarían a clientes conectados a otra). Documentado también como comentario inline en el propio `main.tf`.
+
+## 14. Red — sin cambios respecto a incremento 2
+Las nuevas rutas (`GET /leads`, `/ws/leads`) viven en el mismo Container App, mismo ingress ya configurado (`transport = "auto"`, ya soporta upgrade de WebSocket desde incremento 1) — sin puerto ni regla de firewall adicional. Las llamadas salientes a Azure Communication Services usan el mismo NAT saliente del Container Apps Environment.
+
+## 15. Seguridad — mapeo a recursos concretos (Incremento 3)
+
+| Regla / Patrón | Implementación concreta |
+|---|---|
+| PATTERN-11 (secrets vía Key Vault) | Nuevo secreto `acs-connection-string`, mismo Key Vault, mismo mecanismo de referencia desde Container Apps secrets |
+| SECURITY-06 (least privilege) | El acceso al nuevo secreto se otorga a la misma Managed Identity del Container App ya existente (ya tiene el rol "Key Vault Secrets User") — sin ampliar su alcance |
+| PATTERN-25 (instancia única) | `max_replicas = 1` en `azurerm_container_app.agent_service.template` |
+
+## 16. Costos — incremental (Incremento 3)
+- **Costo de infraestructura nuevo**: Azure Communication Services (Email) — tier pay-as-you-go, costo por email enviado (bajo volumen esperado a escala de demo). Sin costo de dominio (dominio administrado por Azure, no requiere compra de dominio personalizado).
+- Sin costo adicional de Postgres/Key Vault/Foundry (misma infraestructura, nueva tabla dentro de la misma base).
+- Reducir `max_replicas` de 3 a 1 (Sección 13) es, si acaso, una **reducción** de costo potencial máximo (nunca se paga por una 2ª/3ª réplica que ahora no puede existir).
