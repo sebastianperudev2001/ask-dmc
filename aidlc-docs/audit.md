@@ -1313,3 +1313,31 @@ Cada pieza siguió RED (test escrito y verificado fallando por la razón correct
 **Context**: CONSTRUCTION phase, agent-service Incremento 3 — transition from Infrastructure Design to Code Generation.
 
 ---
+## agent-service Incremento 3 — Code Generation Plan Created
+**Timestamp**: 2026-07-11T00:00:13Z
+**User Input**: "aprobado" (Infrastructure Design approval, logged above)
+**AI Response**: Explored actual codebase structure (main.py DI pattern, ChatAgentClient's tool-calling shape, migrations/tests naming conventions, CourseRepository gaps) via Explore agent to ground the plan in real file paths. Created 18-step `agent-service-increment3-code-generation-plan.md`: domain models/event publisher, ports, repository adapters + tests, email adapter, agentic OutreachAgentService mirroring ChatAgentClient exactly, ChatAgentClient extended with one publish call, LeadBroadcaster, LeadQueryService, API schemas/routes, integration tests, docs summaries, migration 004, config. Presenting for approval.
+**Context**: CONSTRUCTION phase, agent-service Incremento 3, Code Generation stage — Part 1 (planning).
+
+---
+## Code Generation Approval — agent-service Incremento 3
+**Timestamp**: 2026-07-11T00:00:14Z
+**User Input**: "for each step there must be 1 commit"
+**AI Response**: Approved as a instruction to commit after each of the 18 plan steps individually (not just one commit at the end of the stage), in addition to the existing stage-approval commit convention. Saved as a refinement to the feedback_commit_on_approval memory. Marked Code Generation Part 1 (Planning) approved in aidlc-state.md. Beginning Part 2 (execution), Step 1.
+**Context**: CONSTRUCTION phase, agent-service Incremento 3, Code Generation stage — transition from Planning to Generation, with a new per-step commit granularity requirement.
+
+---
+## agent-service Incremento 3 — Code Generation Complete
+**Timestamp**: 2026-07-11T00:00:15Z
+**User Input**: (execution of the 18-step approved plan, one commit per step per user's explicit instruction)
+**AI Response**: All 18 steps completed and committed individually (commits 600f889 through 62e595e). Generated: domain models (OutreachDraft/LeadEvent), LeadEventPublisher, extended Lead/Course ports + new Draft/Email ports, Postgres adapters (list_leads/find_by_id/PostgresDraftRepository), AzureCommunicationServicesEmailSender, agentic OutreachAgentService (mirrors ChatAgentClient's tool-calling pattern with a get_course_details tool), a one-call extension to ChatAgentClient publishing LeadEvent, LeadBroadcaster + Lead/Draft wire schemas, LeadQueryService, 5 new HTTP/WS routes wired into main.py, migration 004_create_outreach_drafts.sql (with a DB-level partial unique index backing BR-22), and doc summaries. One real gap found and fixed during generation: AzureCommunicationServicesEmailSender's eager EmailClient construction broke main.py's import entirely with an empty ACS_CONNECTION_STRING — fixed with lazy client construction, verified main.py now imports cleanly. Full test suite: 94 passed, 23 skipped (Postgres-dependent, no TEST_DATABASE_URL locally).
+**Context**: CONSTRUCTION phase, agent-service Incremento 3, Code Generation stage — Part 2 (generation) complete.
+
+---
+## agent-service Incremento 3 — Real Postgres verification, TRUNCATE/FK bug found and fixed
+**Timestamp**: 2026-07-11T00:00:16Z
+**User Input**: "Shouldn't we test that we can start the testing DB" (following up on a question about why 23 tests were skipped)
+**AI Response**: Started the existing agent-service-db Docker container (was stopped), confirmed agent_service_test database already existed from a prior session, applied migration 004 (was missing), then ran the full suite with TEST_DATABASE_URL set. Found 9 real failures: 8 in test_postgres_lead_repository.py (all of them, including pre-existing tests) plus the already-documented pre-existing test_p6_pgvector_ranking_matches_numpy_oracle flaky test. Root cause of the 8: migration 004's new FK (outreach_drafts.lead_id -> leads.id) broke the existing `TRUNCATE TABLE conversation_sessions, leads` statements — Postgres refuses to truncate a referenced table unless the referencing table is included too. Fixed by adding outreach_drafts to all 8 TRUNCATE statements in that file. Re-ran: 116 passed, 1 failed (the p6 oracle test — confirmed via 3 isolated re-runs to fail consistently independent of this session's changes, matching the pre-existing/documented flakiness from Incremento 2's Build and Test Rondas 5-6, not a regression from this work).
+**Context**: CONSTRUCTION phase, agent-service Incremento 3, Code Generation stage — real-infrastructure verification caught a genuine bug that mocking would have missed, validating the user's suggestion.
+
+---

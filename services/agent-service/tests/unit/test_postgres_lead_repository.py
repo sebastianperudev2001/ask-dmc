@@ -31,7 +31,7 @@ def _lead(service_session_id: str) -> Lead:
 
 
 async def test_save_and_find_by_service_session_id(connection_pool):
-    await connection_pool.pool.execute("TRUNCATE TABLE conversation_sessions, leads")
+    await connection_pool.pool.execute("TRUNCATE TABLE outreach_drafts, conversation_sessions, leads")
     repo = PostgresLeadRepository(connection_pool)
     lead = _lead("test-session-1")
 
@@ -47,14 +47,14 @@ async def test_save_and_find_by_service_session_id(connection_pool):
 
 
 async def test_find_by_service_session_id_returns_none_when_not_found(connection_pool):
-    await connection_pool.pool.execute("TRUNCATE TABLE conversation_sessions, leads")
+    await connection_pool.pool.execute("TRUNCATE TABLE outreach_drafts, conversation_sessions, leads")
     repo = PostgresLeadRepository(connection_pool)
 
     assert await repo.find_by_service_session_id("nonexistent") is None
 
 
 async def test_mark_payment_confirmed(connection_pool):
-    await connection_pool.pool.execute("TRUNCATE TABLE conversation_sessions, leads")
+    await connection_pool.pool.execute("TRUNCATE TABLE outreach_drafts, conversation_sessions, leads")
     repo = PostgresLeadRepository(connection_pool)
     lead = _lead("test-session-2")
     await repo.save(lead)
@@ -67,7 +67,7 @@ async def test_mark_payment_confirmed(connection_pool):
 
 
 async def test_save_upserts_existing_lead(connection_pool):
-    await connection_pool.pool.execute("TRUNCATE TABLE conversation_sessions, leads")
+    await connection_pool.pool.execute("TRUNCATE TABLE outreach_drafts, conversation_sessions, leads")
     repo = PostgresLeadRepository(connection_pool)
     lead = _lead("test-session-3")
     await repo.save(lead)
@@ -85,7 +85,7 @@ async def test_save_upserts_existing_lead(connection_pool):
 
 
 async def test_list_leads_returns_all_leads_newest_first(connection_pool):
-    await connection_pool.pool.execute("TRUNCATE TABLE conversation_sessions, leads")
+    await connection_pool.pool.execute("TRUNCATE TABLE outreach_drafts, conversation_sessions, leads")
     repo = PostgresLeadRepository(connection_pool)
     await repo.save(_lead("test-session-4"))
     await repo.save(_lead("test-session-5"))
@@ -96,14 +96,14 @@ async def test_list_leads_returns_all_leads_newest_first(connection_pool):
 
 
 async def test_list_leads_returns_empty_list_when_no_leads(connection_pool):
-    await connection_pool.pool.execute("TRUNCATE TABLE conversation_sessions, leads")
+    await connection_pool.pool.execute("TRUNCATE TABLE outreach_drafts, conversation_sessions, leads")
     repo = PostgresLeadRepository(connection_pool)
 
     assert await repo.list_leads() == []
 
 
 async def test_find_by_id_returns_the_matching_lead(connection_pool):
-    await connection_pool.pool.execute("TRUNCATE TABLE conversation_sessions, leads")
+    await connection_pool.pool.execute("TRUNCATE TABLE outreach_drafts, conversation_sessions, leads")
     repo = PostgresLeadRepository(connection_pool)
     lead = _lead("test-session-6")
     await repo.save(lead)
@@ -115,7 +115,7 @@ async def test_find_by_id_returns_the_matching_lead(connection_pool):
 
 
 async def test_find_by_id_returns_none_when_not_found(connection_pool):
-    await connection_pool.pool.execute("TRUNCATE TABLE conversation_sessions, leads")
+    await connection_pool.pool.execute("TRUNCATE TABLE outreach_drafts, conversation_sessions, leads")
     repo = PostgresLeadRepository(connection_pool)
 
     assert await repo.find_by_id("nonexistent") is None
