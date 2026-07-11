@@ -55,7 +55,8 @@
 - Add `lead_event_publisher: LeadEventPublisher` param to `__init__`
 - In `_upsert_lead` (after `await self._lead_repository.save(lead)`), publish a `LeadEvent` — `event_type="created"` the first time a lead is persisted for this conversation, `event_type="score_changed"` otherwise (single insertion point covers both BR-24's trigger and Story 3's board updates)
 
-## Step 10 — Broadcaster (API layer)
+## Step 10 — Broadcaster (API layer) [x]
+**Note**: also added `LeadOut`/`LeadsSnapshotOut`/`LeadEventOut`/`OutreachDraftOut` to `schemas.py` here (moved up from Step 13, since the broadcaster needs a wire format now — single source of truth for Lead serialization, reused later by `GET /leads`).
 **File**: `services/agent-service/src/api/lead_broadcaster.py` (create)
 - `LeadBroadcaster`: maintains the `/ws/leads` connection set; `handle_connection(websocket)` sends a `snapshot` (via `LeadQueryService`) then streams `lead_event` messages; `broadcast(event)` iterates connections, drops ones whose send fails (PATTERN-24, lazy detection, no heartbeat)
 

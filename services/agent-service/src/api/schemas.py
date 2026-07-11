@@ -11,7 +11,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from src.domain.models import RecommendationCandidate
+from src.domain.models import Lead, OutreachDraft, RecommendationCandidate
 
 MAX_TEXT_FIELD_LENGTH = 2000
 MAX_BUDGET = Decimal("1000000")
@@ -136,3 +136,80 @@ class MercadoPagoWebhookPayload(BaseModel):
 
     type: str
     data: MercadoPagoWebhookData
+
+
+# ── Incremento 3 — BackOffice: read path + broadcast + agente de outreach ──
+
+
+class LeadOut(BaseModel):
+    """FR-3/FR-4 — todos los campos que la card/popup del kanban necesitan. No incluye
+    la transcripción de la conversación (fuera de alcance de FR-4). Reutilizado tanto
+    por `GET /leads` como por los mensajes `snapshot`/`lead_event` de `/ws/leads` — una
+    sola fuente de verdad para el formato de wire de un Lead."""
+
+    id: str
+    created_at: datetime
+    name: str | None
+    email: str | None
+    profile_summary: str
+    motivation: str
+    motivation_detail: str
+    recommended_programs: list[str]
+    payment_link_sent: bool
+    payment_confirmed: bool
+    payment_confirmed_at: datetime | None
+    score: str
+    score_justification: str
+
+    @staticmethod
+    def from_lead(lead: Lead) -> "LeadOut":
+        return LeadOut(
+            id=lead.id,
+            created_at=lead.created_at,
+            name=lead.name,
+            email=lead.email,
+            profile_summary=lead.profile_summary,
+            motivation=lead.motivation.value,
+            motivation_detail=lead.motivation_detail,
+            recommended_programs=list(lead.recommended_programs),
+            payment_link_sent=lead.payment_link_sent,
+            payment_confirmed=lead.payment_confirmed,
+            payment_confirmed_at=lead.payment_confirmed_at,
+            score=lead.score.value,
+            score_justification=lead.score_justification,
+        )
+
+
+class LeadsSnapshotOut(BaseModel):
+    type: Literal["snapshot"] = "snapshot"
+    leads: list[LeadOut]
+
+
+class LeadEventOut(BaseModel):
+    type: Literal["lead_event"] = "lead_event"
+    event_type: Literal["created", "score_changed"]
+    lead: LeadOut
+
+
+class OutreachDraftOut(BaseModel):
+    draft_id: str
+    lead_id: str
+    subject: str
+    body: str
+    status: str
+    trigger: str
+    created_at: datetime
+    sent_at: datetime | None
+
+    @staticmethod
+    def from_draft(draft: OutreachDraft) -> "OutreachDraftOut":
+        return OutreachDraftOut(
+            draft_id=draft.draft_id,
+            lead_id=draft.lead_id,
+            subject=draft.subject,
+            body=draft.body,
+            status=draft.status.value,
+            trigger=draft.trigger.value,
+            created_at=draft.created_at,
+            sent_at=draft.sent_at,
+        )
