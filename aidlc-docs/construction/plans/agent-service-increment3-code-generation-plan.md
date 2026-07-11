@@ -94,7 +94,8 @@ Verified: full suite 94 passed, 23 skipped (Postgres-dependent, no `TEST_DATABAS
 ## Step 16 — Repository layer summary
 **File**: `aidlc-docs/construction/agent-service/code/repository-layer-summary-increment3.md` (create)
 
-## Step 17 — Database migration
+## Step 17 — Database migration [x]
+Also updated `README.md` (migration list, apply instructions) and `.env.example` (`ACS_CONNECTION_STRING`/`ACS_SENDER_ADDRESS`). Added a DB-level partial unique index (`outreach_drafts_one_pending_per_lead_idx`) enforcing BR-22 as defense-in-depth alongside the application-level dedupe check.
 **File**: `services/agent-service/migrations/004_create_outreach_drafts.sql` (create)
 - `outreach_drafts` table: `draft_id UUID PK, lead_id UUID FK -> leads, subject TEXT, body TEXT, status TEXT, trigger TEXT, created_at TIMESTAMPTZ, sent_at TIMESTAMPTZ NULL`; partial unique index enforcing at most one `pending` row per `lead_id` (belt-and-suspenders alongside the application-level dedupe check, BR-22)
 

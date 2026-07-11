@@ -42,6 +42,7 @@ az login
 psql "$DATABASE_URL" -f migrations/001_create_courses.sql
 psql "$DATABASE_URL" -f migrations/002_create_leads_and_sessions.sql
 psql "$DATABASE_URL" -f migrations/003_create_conversation_messages.sql
+psql "$DATABASE_URL" -f migrations/004_create_outreach_drafts.sql
 python -m scripts.seed_catalog   # genera embeddings y carga el catálogo (catalog_seed_data.json)
 ```
 
@@ -102,7 +103,7 @@ src/
                   ChatAgentClient (Agent + 3 tools: collect_profile_data,
                   get_course_recommendations, create_payment_link)
   api/          — ChatWebSocketHandler (/ws/chat), MercadoPagoWebhookHandler, schemas Pydantic
-migrations/     — 001 (courses + pgvector), 002 (leads + conversation_sessions), 003 (conversation_messages)
+migrations/     — 001 (courses + pgvector), 002 (leads + conversation_sessions), 003 (conversation_messages), 004 (outreach_drafts)
 scripts/        — seed_catalog.py, manual_chat_check.py, simulate_mercadopago_webhook.py
 tests/unit/     — dominio + adaptadores (property-based con Hypothesis)
 tests/integration/ — flujo WS completo y flujo de webhook, con fakes
