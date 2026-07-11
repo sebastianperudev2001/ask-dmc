@@ -38,7 +38,8 @@ Verified: `tsc --noEmit` clean.
 **Files** (all new, `components/`): `KanbanBoard.tsx` (+ exported pure `groupLeadsByScore`), `LeadCard.tsx`, `LeadDetailModal.tsx`, `DraftPanel.tsx`, `NotificationCenter.tsx`, `BackofficeApp.tsx` (top-level, sole `useLeadsSocket()` call site — mirrors `ChatApp.tsx`'s role).
 `DraftPanel` calls `GET/POST` against `NEXT_PUBLIC_API_URL` directly (`fetch`) — no Effect involved here (Functional Design confines Effect to the WS layer only, matching `apps/chat`'s precedent where `fetchConversationHistory`/`fetchConversations` are plain `fetch` too).
 
-## Step 9 — Component unit tests
+## Step 9 — Component unit tests [x]
+Verified: full suite 17/17 passing (3 test files).
 **Files**: `components/KanbanBoard.test.tsx` (`groupLeadsByScore` as a plain function test — three tiers, empty tier renders empty not error per Story 1 AC verified at the pure-function level).
 
 ## Step 10 — Visual design pass (NFR-2)
