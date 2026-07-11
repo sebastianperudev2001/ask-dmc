@@ -1348,3 +1348,24 @@ Cada pieza siguió RED (test escrito y verificado fallando por la razón correct
 **Context**: CONSTRUCTION phase — transition from agent-service Incremento 3 (complete) to apps/backoffice unit, Functional Design stage.
 
 ---
+## apps/backoffice — Functional Design Plan Created
+**Timestamp**: 2026-07-11T00:00:18Z
+**User Input**: (none — proceeding automatically after agent-service Incremento 3 completion)
+**AI Response**: Explored apps/chat's actual codebase (Next.js 15/App Router/Tailwind v4/Vitest, Effect-based WS layer confined to lib/, single-hook-at-shared-ancestor pattern for the WS connection, colocated tests) via Explore agent to ground the plan in reality. Created light Functional Design plan for apps/backoffice with only 2 open questions (Effect vs plain hooks for WsLeadsClient; notification persistence across page reload) — tooling/testing/WS-sharing conventions stated directly as already-decided (mirroring apps/chat, no ambiguity there). Waiting for answers.
+**Context**: CONSTRUCTION phase, apps/backoffice unit, Functional Design stage — Part 1 (planning).
+
+---
+## apps/backoffice — Functional Design Artifact Generated
+**Timestamp**: 2026-07-11T00:00:19Z
+**User Input**: "done" — Q1=A (mirror apps/chat's Effect pattern), Q2=A (in-memory notifications only)
+**AI Response**: No ambiguities. Generated aidlc-docs/construction/apps-backoffice/functional-design/frontend-components.md: component hierarchy (BackofficeApp -> KanbanBoard/LeadCard, LeadDetailModal/DraftPanel, NotificationCenter), useLeadsSocket hook mirroring apps/chat's Effect (Context.Tag/ManagedRuntime) shape with pure testable reducers (applyLeadWireEvent, deriveNotification, groupLeadsByScore), and props/state per component. One design simplification made directly (not asked as a question, low-risk): apps/backoffice uses only the WS snapshot as its initial data source, skipping a separate GET /leads call, since LeadBroadcaster already sends a full snapshot on every connection (a detail Application Design's original doc predated). data-testid conventions applied per this project's automation-friendly code standard.
+**Context**: CONSTRUCTION phase, apps/backoffice unit, Functional Design stage — Part 2 (generation).
+
+---
+## Functional Design Approval — apps/backoffice
+**Timestamp**: 2026-07-11T00:00:20Z
+**User Input**: "approved"
+**AI Response**: Marked Functional Design (apps/backoffice) COMPLETED and APPROVED in aidlc-state.md. Per backoffice-execution-plan.md, apps/backoffice skips NFR Requirements/NFR Design/Infrastructure Design (already decided at Units Generation: local next dev only, no new NFRs beyond what's already established). Proceeding directly to Code Generation for this unit.
+**Context**: CONSTRUCTION phase, apps/backoffice unit — transition from Functional Design to Code Generation.
+
+---
