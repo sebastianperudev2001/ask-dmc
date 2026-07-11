@@ -105,3 +105,53 @@ Las nuevas reglas BR-16 a BR-21 (business-rules.md) son candidatas a PBT donde a
 - Exposición pública real del webhook (túnel/despliegue) — diferido, ver Sección 10.
 - Notificación activa de escalación (Azure Communication Services/Slack/Teams) — diferido (DIV-12).
 - Cualquier requisito de cumplimiento normativo formal sobre PII (ej. derecho al olvido) — proyecto de demo/curso, no se agrega en este incremento.
+
+---
+
+# Incremento 3 — BackOffice: read path + broadcast en tiempo real + agente de outreach
+
+**Fecha**: 2026-07-11
+
+## 14. Proveedor de email (NFR-5, diferido desde Requirements Analysis)
+Resuelto: **Azure Communication Services (Email)** — ver `tech-stack-decisions.md` para el detalle y las alternativas descartadas. Retoma DIV-12 (que había dejado sin resolver el equivalente de SES en Azure para notificación de escalación) — aunque el caso de uso original de DIV-12 (notificación de escalación) sigue diferido, el proveedor elegido aquí queda disponible para retomarlo en un futuro incremento si se decide.
+
+## 15. Seguridad — sin safelist de destinatarios (decisión explícita, Q2 = B)
+A diferencia de Mercado Pago (modo sandbox, sin cargos reales posibles), un proveedor de email real envía un correo real al inbox real de `Lead.email` en el momento en que existan credenciales configuradas. El usuario decidió explícitamente **no** restringir el envío a una safelist en este incremento — el mecanismo de seguridad real es la ausencia de credenciales reales configuradas hasta que el usuario decida probarlo (misma postura ya usada con Mercado Pago: "construido pero posiblemente sin probar sin credenciales"). **Riesgo aceptado, documentado explícitamente**: si se configuran credenciales reales de Azure Communication Services antes de que el usuario las considere listas para uso real, cualquier `Lead.email` capturado durante pruebas recibirá un correo real.
+
+## 16. Confiabilidad — envío idempotente de drafts (Q3 + follow-up = A)
+Defensa en dos capas, ninguna reemplaza a la otra:
+- **Frontend** (mecanismo primario de UX): `DraftPanel` muestra un estado de carga/loader mientras `send_draft` está en curso y deshabilita el botón "Send" para prevenir doble-click.
+- **Backend** (respaldo de correctitud): `send_draft` ejecuta un `UPDATE ... WHERE status = 'pending'` atómico contra Postgres antes de invocar `EmailSender.send`. Si la actualización afecta 0 filas (porque otra llamada concurrente — ej. un reintento de red o una segunda pestaña — ya cambió el estado), `send_draft` no reintenta el envío y retorna el draft ya actualizado en vez de enviar un segundo email. Mismo espíritu de defensa en profundidad que BR-20 (re-consulta de pago tras webhook).
+
+## 17. Escalabilidad — restricción de instancia única (Q4 = A)
+`LeadEventPublisher`/`LeadBroadcaster` son en memoria, dentro de un solo proceso — esto es una restricción de **correctitud**, no solo de performance: un evento publicado en una réplica de Container Apps nunca llega a un cliente WebSocket conectado a otra réplica. Se documenta como restricción dura: `agent-service` debe mantenerse en **min=max=1 réplica** para que `/ws/leads` funcione correctamente — consistente con la decisión de "mínimo 1 réplica" ya tomada en el NFR Design de Incremento 1 (aunque aquella decisión no exigía max=1, esta sí lo hace, porque ahora el correcto funcionamiento del feature — no solo el arranque en frío — depende de ello). Escalar horizontalmente queda explícitamente fuera de alcance hasta que se introduzca un pub/sub externo (ver `backoffice-services.md`, Servicio 2, para la justificación original de esta decisión de diseño).
+
+## 18. Performance — sin SLA explícito para generación de drafts (Q5 = A)
+El trigger automático es fire-and-forget (BR-24) — no cuenta contra ningún objetivo de latencia percibido por el usuario de `apps/chat`. El trigger on-demand es síncrono desde la perspectiva del staff, pero se trata igual que el resto del flujo conversacional (Incremento 2, Sección 8): best-effort, sin SLA numérico. El loader del frontend (Sección 16) ya comunica que hay una espera en curso, sin necesidad de un objetivo de tiempo específico para este incremento.
+
+## 19. Seguridad — extensiones (Security Baseline, full enforcement)
+
+| Regla | Estado | Justificación |
+|---|---|---|
+| SECURITY-01 (encripción at-rest/in-transit) | Compliant | Cubierto por el mismo Postgres Flexible Server; ahora también aplica a `OutreachDraft.body` (contenido de email con PII/contexto de negocio del lead). |
+| SECURITY-03 (logging sin PII) | Compliant (reforzado) | Extiende la regla ya vigente: nunca loguear `OutreachDraft.subject`/`body` en texto plano (contienen `profile_summary`/`motivation_detail` del lead) — solo `draft_id`/`lead_id`/`status` en logs de aplicación. |
+| SECURITY-06 (least privilege) | Compliant (a implementar en Infra Design) | Extiende a un nuevo secreto de Key Vault (credencial de Azure Communication Services) — mismo patrón de Managed Identity ya establecido. |
+| SECURITY-11 (rate limiting) | Riesgo ya aceptado (sin cambios) | `/ws/leads`, `GET /leads` y los endpoints de draft heredan la misma decisión ya aceptada para el resto de `agent-service` — sin rate limiting explícito en este incremento. |
+| NFR-1 (sin auth, issue #18) | Riesgo ya aceptado (sin cambios) | Confirmado que esta ampliación de superficie de PII (`/ws/leads`, drafts) queda cubierta por la misma decisión ya tomada y trackeada en el issue #18 — no se re-decide aquí. |
+
+## 20. Testing (extensión Property-Based Testing)
+Las nuevas reglas BR-22 a BR-30 son candidatas a PBT donde exista una propiedad determinística verificable — en particular BR-22/BR-23 (dedupe: nunca más de un draft `pending` por lead, ver Sección 23 de business-logic-model.md) y la propiedad de que `send_draft` nunca invoca `EmailSender.send` con un `Lead.email` vacío (Sección 22). BR-24 (fire-and-forget) y BR-26 (decisión del LLM de invocar el tool `get_course_details`) no son propiedades formalmente verificables por PBT — se cubren con tests de integración dirigidos, mismo criterio ya aplicado a BR-16 en Incremento 2.
+
+## 21. Observabilidad — nuevas métricas
+- Conteo de drafts generados por trigger (`auto` vs. `on_demand`).
+- Tasa de éxito/fracaso de `EmailSender.send` (Azure Communication Services).
+- Conteo de conexiones activas a `/ws/leads` (para dimensionar si algún día se justifica escalar más allá de 1 réplica — Sección 17).
+- Latencia de `generate_draft` (sin SLA, pero medida para informar una futura decisión).
+
+---
+
+## Fuera de alcance de NFR — Incremento 3
+- Safelist de destinatarios de email — descartado explícitamente (Sección 15, Q2 = B).
+- Escalado horizontal de `agent-service` — bloqueado por diseño hasta introducir un pub/sub externo (Sección 17).
+- SLA de latencia para generación de drafts — sin objetivo numérico (Sección 18).
+- Notificación de escalación por email (DIV-12) — sigue diferida; no se retoma en este incremento aunque ahora exista un proveedor de email disponible.

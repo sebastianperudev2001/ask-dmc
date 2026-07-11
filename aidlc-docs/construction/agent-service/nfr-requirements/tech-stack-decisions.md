@@ -97,3 +97,30 @@ Frontend (chat widget, fuera de alcance de esta unidad)
 ## Testing del webhook: simulación local, sin exposición pública (esta vuelta)
 - Decisión explícita del usuario (NFR Requirements): no se usa túnel (`ngrok`) ni se despliega el webhook a Container Apps en este incremento. Se agrega un script de simulación manual (patrón ya establecido con `scripts/manual_ws_check.py`) que firma y envía un payload realista directamente a `localhost`.
 - **Alternativas descartadas para este incremento**: túnel temporal (ngrok) y despliegue parcial a Container Apps — ambas viables pero se prefirió no tocar el alcance de despliegue "solo local" ya decidido; quedan como candidatas naturales para cuando se decida una prueba end-to-end real contra Mercado Pago.
+
+---
+
+# Incremento 3 — BackOffice: read path + broadcast en tiempo real + agente de outreach
+
+**Fecha**: 2026-07-11
+
+## Proveedor de email: Azure Communication Services (Email)
+- Resuelve NFR-5 (diferido desde `backoffice-requirements.md`) y retoma parcialmente DIV-12 (Azure equivalente a SES, aunque el caso de uso de DIV-12 en sí sigue diferido).
+- **Alternativas descartadas**:
+  - **SendGrid (Twilio)**: descartado — introduce un nuevo vendor/cuenta fuera de Azure, sin ventaja clara sobre mantenerse en el mismo proveedor cloud ya usado para todo lo demás (NFR-3).
+  - **SMTP vía cuenta personal/Gmail**: descartado — más rápido de conectar pero no apto para nada más allá de una prueba trivial (límites de envío, no es el patrón que este proyecto usa en ningún otro lado).
+- Sin safelist de destinatarios (NFR Requirements, Sección 15) — decisión explícita del usuario de mantener el mismo alcance abierto que ya se usa para Mercado Pago.
+
+## Secreto nuevo en Key Vault
+- Credencial de conexión de Azure Communication Services (connection string o access key, según el SDK de Python disponible al momento de Infrastructure Design).
+- Mismo patrón de Managed Identity + Container Apps secrets ya establecido en incrementos 1 y 2.
+
+## Persistencia: nueva tabla en el mismo Postgres ya provisionado
+- `outreach_drafts` (o nombre equivalente, ver `domain-entities.md` Incremento 3 para el shape de `OutreachDraft`) vive en la misma instancia Azure Database for PostgreSQL Flexible Server ya usada para `courses`/`leads`/`conversation_messages`. Nueva migración, no un aprovisionamiento nuevo.
+
+## Restricción operativa: `agent-service` fijo en 1 réplica (min=max=1)
+- A diferencia de incrementos anteriores (donde "mínimo 1 réplica" era una decisión de cold-start/costo), esta vez la restricción es de **correctitud**: `LeadEventPublisher`/`LeadBroadcaster` son en memoria y de un solo proceso — ver `nfr-requirements.md` Sección 17. Se documenta aquí como una decisión de infraestructura a aplicar en Infrastructure Design (Container Apps `minReplicas = maxReplicas = 1` explícito, no solo `minReplicas = 1`).
+- **Alternativa descartada**: introducir un pub/sub externo (Redis, Azure Service Bus) para permitir escalado horizontal — explícitamente fuera de alcance para este incremento (demo-scale, NFR-4); queda como el seam natural si un futuro incremento lo necesita (ya anticipado en `backoffice-services.md`, Servicio 2).
+
+## Confiabilidad del envío: guard atómico en Postgres + loading state en frontend
+- No es una elección de tecnología nueva — reutiliza el mismo Postgres/patrón `UPDATE ... WHERE` ya idiomático en el resto del código (ej. `mark_payment_confirmed`). Documentado aquí porque forma parte de las decisiones de esta NFR Requirements (Sección 16).

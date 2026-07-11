@@ -1243,3 +1243,31 @@ Cada pieza siguió RED (test escrito y verificado fallando por la razón correct
 **Context**: CONSTRUCTION phase, agent-service Incremento 3 — transition from Functional Design to NFR Requirements.
 
 ---
+## agent-service Incremento 3 — NFR Requirements Plan Created
+**Timestamp**: 2026-07-11T00:00:03Z
+**User Input**: (none — proceeding automatically after Functional Design approval)
+**AI Response**: Created `aidlc-docs/construction/plans/agent-service-increment3-nfr-requirements-plan.md` with 5 questions: email provider selection (NFR-5, deferred since Requirements Analysis), whether to safelist-restrict real outbound email this increment, idempotent-send guard against double-click, single-instance constraint for the in-process pub/sub (/ws/leads correctness, not just performance), and latency target for on-demand draft generation. Justified skipping Availability/Usability/Maintainability categories. Waiting for user answers.
+**Context**: CONSTRUCTION phase, agent-service Incremento 3, NFR Requirements stage — Part 1 (planning).
+
+---
+## agent-service Incremento 3 — NFR Requirements: Follow-up Question
+**Timestamp**: 2026-07-11T00:00:04Z
+**User Input**: "done" — Q1=A (Azure Communication Services), Q2=B (no safelist, rely on no real credentials yet), Q3=A + note ("this is a UI design thing... loading state so they cannot press the same button again"), Q4=A (min=max=1 replica hard constraint), Q5=A (no explicit SLA)
+**AI Response**: Detected ambiguity in Q3 — answer A described a backend atomic check-and-set, but the added note redirects to a frontend-only UI mechanism (disabled/loading button state), a materially different design. Added 1 follow-up question asking whether the backend should still keep a cheap atomic guard as defense-in-depth alongside the UI state, or be UI-only with no backend enforcement. Waiting for answer.
+**Context**: CONSTRUCTION phase, agent-service Incremento 3, NFR Requirements stage — mandatory ambiguity-resolution step.
+
+---
+## agent-service Incremento 3 — NFR Requirements Artifacts Generated
+**Timestamp**: 2026-07-11T00:00:05Z
+**User Input**: "done" (follow-up = A: both frontend loading state and backend atomic guard)
+**AI Response**: No remaining ambiguities. Appended "Incremento 3" sections to nfr-requirements.md (Secciones 14-21: Azure Communication Services as email provider, no safelist restriction (accepted risk, explicit), two-layer idempotent send guard, hard min=max=1 replica constraint for /ws/leads correctness, no latency SLA for draft generation, Security Baseline compliance table, PBT applicability, new observability metrics) and tech-stack-decisions.md (provider selection + discarded alternatives, new Key Vault secret, new Postgres table, the 1-replica operational constraint, reliability mechanism). Both files continue the established per-increment append convention.
+**Context**: CONSTRUCTION phase, agent-service Incremento 3, NFR Requirements stage — Part 2 (generation).
+
+---
+## NFR Requirements Approval — agent-service Incremento 3
+**Timestamp**: 2026-07-11T00:00:06Z
+**User Input**: "looks good"
+**AI Response**: Marked NFR Requirements (agent-service Incremento 3) COMPLETED and APPROVED in aidlc-state.md. Proceeding to NFR Design stage for this unit.
+**Context**: CONSTRUCTION phase, agent-service Incremento 3 — transition from NFR Requirements to NFR Design.
+
+---
