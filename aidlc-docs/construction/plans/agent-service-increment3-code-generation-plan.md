@@ -18,7 +18,7 @@
 **File**: `services/agent-service/src/domain/lead_event_publisher.py` (create)
 - `LeadEventPublisher` — `publish(event: LeadEvent) -> None`, `subscribe(handler) -> None`. Synchronous fan-out to subscribers, except handlers that need to be non-blocking schedule their own `asyncio.create_task` internally (PATTERN-23) — the publisher itself stays simple/dumb.
 
-## Step 3 — Ports
+## Step 3 — Ports [x]
 - `services/agent-service/src/ports/lead_repository.py` (modify): add `list_leads() -> list[Lead]`, `find_by_id(lead_id) -> Lead | None`
 - `services/agent-service/src/ports/course_repository.py` (modify): add `find_by_id(course_id) -> Course | None`
 - `services/agent-service/src/ports/draft_repository.py` (create): `save`, `find_active_by_lead_id`, `find_by_id`, and an atomic `mark_sent(draft_id) -> OutreachDraft | None` (returns `None` if the row wasn't `pending` — backs PATTERN-28)

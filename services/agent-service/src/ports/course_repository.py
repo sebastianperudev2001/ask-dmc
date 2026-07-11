@@ -3,7 +3,7 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Protocol
 
-from src.domain.models import RecommendationCandidate
+from src.domain.models import Course, RecommendationCandidate
 
 
 class CourseRepository(Protocol):
@@ -32,4 +32,11 @@ class CourseRepository(Protocol):
 
     async def catalog_is_empty(self) -> bool:
         """True when the courses table has zero rows (BR-11 empty-catalog edge case)."""
+        ...
+
+    # ── Incremento 3 — BackOffice ──
+
+    async def find_by_id(self, course_id: str) -> Course | None:
+        """Usado por GetCourseDetailsTool (BR-26) para resolver name/description/
+        curriculum al redactar un draft de outreach."""
         ...
