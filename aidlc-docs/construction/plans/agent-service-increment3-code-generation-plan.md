@@ -14,7 +14,7 @@
 - Add `OutreachDraft` dataclass (mutable, like `Lead`): `draft_id, lead_id, subject, body, status, trigger, created_at, sent_at`
 - Add `LeadEvent` frozen dataclass: `event_type: Literal["created", "score_changed"], lead: Lead`
 
-## Step 2 — In-process event publisher (domain)
+## Step 2 — In-process event publisher (domain) [x]
 **File**: `services/agent-service/src/domain/lead_event_publisher.py` (create)
 - `LeadEventPublisher` — `publish(event: LeadEvent) -> None`, `subscribe(handler) -> None`. Synchronous fan-out to subscribers, except handlers that need to be non-blocking schedule their own `asyncio.create_task` internally (PATTERN-23) — the publisher itself stays simple/dumb.
 
