@@ -1369,3 +1369,38 @@ Cada pieza siguió RED (test escrito y verificado fallando por la razón correct
 **Context**: CONSTRUCTION phase, apps/backoffice unit — transition from Functional Design to Code Generation.
 
 ---
+## apps/backoffice — Code Generation Plan Created
+**Timestamp**: 2026-07-11T00:00:21Z
+**User Input**: (none — proceeding automatically after Functional Design approval)
+**AI Response**: Explored apps/chat's actual source files directly (ChatService.ts, WsChatService.ts, runtime.ts, RuntimeProvider.tsx, useChat.ts, package.json, tsconfig.json, vitest.config.ts, globals.css, layout.tsx) to ground the plan in exact conventions. Created 10-step plan: project scaffolding, wire types, Effect data layer (service/WS impl/runtime/provider) + tests, useLeadsSocket hook (pure reducers) + tests, 6 components + tests, and a final visual-design pass explicitly invoking the frontend-design skill (NFR-2). Presenting for approval.
+**Context**: CONSTRUCTION phase, apps/backoffice unit, Code Generation stage — Part 1 (planning).
+
+---
+## Code Generation Approval — apps/backoffice
+**Timestamp**: 2026-07-11T00:00:22Z
+**User Input**: "approved"
+**AI Response**: Beginning Part 2 (execution) of the approved 10-step plan, one commit per step.
+**Context**: CONSTRUCTION phase, apps/backoffice unit, Code Generation stage — transition to Part 2 (generation).
+
+---
+## apps/backoffice — Code Generation Complete
+**Timestamp**: 2026-07-11T00:00:23Z
+**User Input**: (execution of the 10-step approved plan, one commit per step)
+**AI Response**: All 10 steps completed and committed individually. Generated: project scaffolding (Next.js 15, mirrors apps/chat's tooling exactly), camelCase wire types, Effect-based LeadsService/WsLeadsService/runtime/provider (mirrors apps/chat's WsChatService shape), useLeadsSocket hook with pure reducers (applyLeadWireEvent, deriveNotification), 6 components (KanbanBoard/LeadCard/LeadDetailModal/DraftPanel/NotificationCenter/BackofficeApp), and a full visual design pass via the frontend-design skill (temperature-scale palette as signature system, distinct type pairing from apps/chat, dark mode support). Verification performed: tsc --noEmit clean, full test suite 17/17 passing, next build succeeds, dev server boots and serves expected HTML structure (confirmed via curl). Explicitly not verified: actual visual appearance in a browser (no screenshot/browser tool available) — flagged to user.
+**Context**: CONSTRUCTION phase, apps/backoffice unit, Code Generation stage — Part 2 (generation) complete. This completes both units for this initiative; next stage is Build and Test.
+
+---
+## Code Generation Approval — apps/backoffice
+**Timestamp**: 2026-07-11T00:00:24Z
+**User Input**: "Approved go ahead and do a end to end verification"
+**AI Response**: Marked Code Generation (apps/backoffice) COMPLETED and APPROVED in aidlc-state.md. This completes both units (agent-service Incremento 3, apps/backoffice) for this initiative. Proceeding to Build and Test stage — end-to-end verification of the full flow.
+**Context**: CONSTRUCTION phase — transition from apps/backoffice Code Generation to Build and Test.
+
+---
+## Code Generation Approval — apps/backoffice + Build and Test start
+**Timestamp**: 2026-07-11T00:00:25Z
+**User Input**: "Approved go ahead and do a end to end verification. but before I think you need me to log in Azure ?"
+**AI Response**: Confirmed az login already active (subscription "Azure subscription 1", user lordbastian22@outlook.com) — DefaultAzureCredential will work against real Azure OpenAI/Foundry. Marked apps/backoffice Code Generation COMPLETED and APPROVED, completing both units for this initiative. Checked the real dev Postgres database (not agent_service_test): has courses (10 seeded), leads, conversation tables already from prior sessions, but was missing outreach_drafts — applied migration 004 to it. Beginning Build and Test stage — full E2E verification against real Postgres, real Azure OpenAI/Foundry, real browser (Playwright).
+**Context**: CONSTRUCTION phase — transition to Build and Test.
+
+---
