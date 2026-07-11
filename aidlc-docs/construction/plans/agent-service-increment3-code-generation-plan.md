@@ -81,7 +81,8 @@
 - `@app.websocket("/ws/leads")` → `lead_broadcaster.handle_connection(websocket)`
 - `POST /leads/{lead_id}/drafts` (generate on-demand), `GET /leads/{lead_id}/drafts/active`, `POST /drafts/{draft_id}/send`, `POST /drafts/{draft_id}/discard`
 
-## Step 14 — Integration tests
+## Step 14 — Integration tests [x]
+Verified: full suite 94 passed, 23 skipped (Postgres-dependent, no `TEST_DATABASE_URL` locally).
 - `tests/integration/test_leads_websocket_flow.py` (create): connect → snapshot; publish event → broadcast reaches client; disconnect doesn't break broadcast to remaining clients
 - `tests/integration/test_outreach_draft_flow.py` (create): score reaches hot → auto-draft generated exactly once even with repeated hot events (BR-22/BR-23); on-demand generate/send/discard via HTTP
 - `tests/integration/fakes.py` (modify): add fakes for `DraftRepository`, `EmailSender`, extend existing `FakeLeadRepository`/`FakeCourseRepository` with the new methods

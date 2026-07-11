@@ -79,7 +79,8 @@ class FakeChatAgentClient:
 
 
 class FakeLeadRepository:
-    """In-memory LeadRepository fake for webhook flow tests (test_webhook_flow.py)."""
+    """In-memory LeadRepository fake for webhook flow tests (test_webhook_flow.py) and
+    leads/outreach flow tests (Incremento 3)."""
 
     def __init__(self, leads: list) -> None:
         self._leads = {lead.service_session_id: lead for lead in leads}
@@ -95,6 +96,82 @@ class FakeLeadRepository:
             if lead.id == lead_id:
                 lead.payment_confirmed = True
                 lead.mercadopago_payment_id = payment_id
+
+    # ── Incremento 3 — BackOffice ──
+
+    async def list_leads(self) -> list:
+        return list(self._leads.values())
+
+    async def find_by_id(self, lead_id: str):
+        for lead in self._leads.values():
+            if lead.id == lead_id:
+                return lead
+        return None
+
+
+class FakeCourseRepository:
+    """In-memory CourseRepository fake — outreach draft flow tests only need find_by_id
+    (GetCourseDetailsTool), not the full recommendation-ranking surface."""
+
+    def __init__(self, courses: list | None = None) -> None:
+        self._courses = {c.course_id: c for c in (courses or [])}
+
+    async def find_by_id(self, course_id: str):
+        return self._courses.get(course_id)
+
+
+class FakeDraftRepository:
+    """In-memory DraftRepository fake — mirrors PostgresDraftRepository's atomic
+    mark_sent semantics (PATTERN-28) without a real database."""
+
+    def __init__(self) -> None:
+        self._drafts: dict = {}
+
+    async def save(self, draft) -> None:
+        self._drafts[draft.draft_id] = draft
+
+    async def find_active_by_lead_id(self, lead_id: str):
+        from src.domain.models import DraftStatus
+
+        for draft in self._drafts.values():
+            if draft.lead_id == lead_id and draft.status == DraftStatus.PENDING:
+                return draft
+        return None
+
+    async def find_by_id(self, draft_id: str):
+        return self._drafts.get(draft_id)
+
+    async def mark_sent(self, draft_id: str):
+        from datetime import datetime, timezone
+
+        from src.domain.models import DraftStatus
+
+        draft = self._drafts.get(draft_id)
+        if draft is None or draft.status != DraftStatus.PENDING:
+            return None
+        draft.status = DraftStatus.SENT
+        draft.sent_at = datetime.now(timezone.utc)
+        return draft
+
+    async def mark_discarded(self, draft_id: str):
+        from src.domain.models import DraftStatus
+
+        draft = self._drafts.get(draft_id)
+        if draft is None:
+            return None
+        draft.status = DraftStatus.DISCARDED
+        return draft
+
+
+class FakeEmailSender:
+    """In-memory EmailSender fake — records sends instead of calling Azure Communication
+    Services."""
+
+    def __init__(self) -> None:
+        self.sent: list[tuple[str, str, str]] = []
+
+    async def send(self, to_email: str, subject: str, body: str) -> None:
+        self.sent.append((to_email, subject, body))
 
 
 class FakeConversationMessageRepository:
