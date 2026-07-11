@@ -16,7 +16,7 @@ Also update root `.gitignore` (add `apps/backoffice/.next/`, `node_modules/`, `.
 ## Step 2 — Wire types [x]
 **File**: `types/leads.ts` (new) — `LeadOut`, `OutreachDraftOut` (camelCase, mirrors the snake_case→camelCase translation boundary pattern from `apps/chat`'s `types/chat.ts`), `Notification`.
 
-## Step 3 — Data layer (Effect) — service + errors
+## Step 3 — Data layer (Effect) — service + errors [x]
 **Files**: `types/errors.ts` (`NetworkError`, `ParseError` — same shape as `apps/chat`), `lib/LeadsService.ts` (`Context.Tag` exposing `events: Stream.Stream<LeadWireEvent, LeadsError>`, no `sendMessage`-equivalent — this channel is push-only, matches Functional Design Section 1).
 
 ## Step 4 — Data layer (Effect) — WS implementation + runtime
