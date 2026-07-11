@@ -88,10 +88,10 @@ Verified: full suite 94 passed, 23 skipped (Postgres-dependent, no `TEST_DATABAS
 - `tests/integration/fakes.py` (modify): add fakes for `DraftRepository`, `EmailSender`, extend existing `FakeLeadRepository`/`FakeCourseRepository` with the new methods
 - `tests/unit/fakes.py` (modify): same additions for unit-level fakes
 
-## Step 15 — API layer summary
+## Step 15 — API layer summary [x]
 **File**: `aidlc-docs/construction/agent-service/code/api-layer-summary-increment3.md` (create)
 
-## Step 16 — Repository layer summary
+## Step 16 — Repository layer summary [x]
 **File**: `aidlc-docs/construction/agent-service/code/repository-layer-summary-increment3.md` (create)
 
 ## Step 17 — Database migration [x]
