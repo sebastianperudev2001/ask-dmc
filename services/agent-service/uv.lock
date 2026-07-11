@@ -215,6 +215,7 @@ source = { editable = "." }
 dependencies = [
     { name = "agent-framework-foundry" },
     { name = "asyncpg" },
+    { name = "azure-communication-email" },
     { name = "azure-identity" },
     { name = "azure-keyvault-secrets" },
     { name = "fastapi" },
@@ -238,6 +239,7 @@ dev = [
 requires-dist = [
     { name = "agent-framework-foundry", specifier = ">=1.10.0" },
     { name = "asyncpg", specifier = "==0.30.0" },
+    { name = "azure-communication-email", specifier = ">=1.0.0" },
     { name = "azure-identity", specifier = "==1.19.0" },
     { name = "azure-keyvault-secrets", specifier = "==4.9.0" },
     { name = "fastapi", specifier = "==0.115.5" },
@@ -323,6 +325,20 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/7a/29/ab1a80ce483fcc36ec2ac0a3db8e043aa954700b34b77db43ed5f4f9c488/azure_ai_projects-2.3.0.tar.gz", hash = "sha256:6e3006b7b8aa51c6ff9db61ef4aac3717f8a712cd1a183d5a1d34e2eb33450bd", size = 27563233, upload-time = "2026-07-01T21:09:00.018Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/15/bd/7e64f2d6e43d19fc8cf464769804f947d997833eb4dce1c86c2ce76146d2/azure_ai_projects-2.3.0-py3-none-any.whl", hash = "sha256:1da20aeac9663740a97644efedbb9f59eb2a332d3e01bfde7aa03027936edf44", size = 349581, upload-time = "2026-07-01T21:09:04.32Z" },
+]
+
+[[package]]
+name = "azure-communication-email"
+version = "1.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "azure-core" },
+    { name = "isodate" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/97/de/f71191ead5e778a7d8939744977a049f796f6fb6549847c667fad373605e/azure_communication_email-1.1.0.tar.gz", hash = "sha256:6a4af8281024327c3ab18a4996919069a99a69aad3a19c40f7852a6682493327", size = 55546, upload-time = "2025-10-17T20:30:23.349Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/97/fe/9bd1028853c4b351c756ba4acc39ef5b5914a3452ebe2df0b8ddd6051114/azure_communication_email-1.1.0-py3-none-any.whl", hash = "sha256:9212153f21cf7e68734c32ebfe8702b43398bd01df2dddb0ca52cd5a8bbd5024", size = 64170, upload-time = "2025-10-17T20:30:24.829Z" },
 ]
 
 [[package]]

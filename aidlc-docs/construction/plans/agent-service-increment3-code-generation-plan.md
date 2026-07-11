@@ -65,7 +65,7 @@
 **File**: `services/agent-service/src/domain/lead_query_service.py` (create)
 - `LeadQueryService.list_leads()` → thin pass-through to `LeadRepository.list_leads()`
 
-## Step 12 — API layer unit tests
+## Step 12 — API layer unit tests [x]
 - `tests/unit/test_outreach_agent_service.py` (create): mirrors `test_chat_agent_client_scoring.py`'s approach (patch `Agent`/`FoundryChatClient`, fake `DraftRepository`/`LeadRepository`/`CourseRepository`/`EmailSender`) — covers dedupe (BR-23), missing-email skip (BR-25), send validation (PATTERN-26), atomic guard (PATTERN-28)
 - `tests/unit/test_lead_broadcaster.py` (create): snapshot-then-stream, dead connection dropped on failed send
 - `tests/unit/test_acs_email_sender.py` (create): retry-with-backoff behavior via `RetryPolicy`
