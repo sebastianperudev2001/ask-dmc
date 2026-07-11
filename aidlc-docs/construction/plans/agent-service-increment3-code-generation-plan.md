@@ -35,7 +35,7 @@
 - `tests/unit/test_postgres_course_repository.py` (modify, or `test_postgres_repository.py` if that's where course tests live — verify at execution time): `find_by_id`
 - `tests/unit/test_postgres_draft_repository.py` (create): CRUD + `mark_sent`'s atomic no-op-on-non-pending behavior (BR-22, PATTERN-28)
 
-## Step 6 — Business logic summary
+## Step 6 — Business logic summary [x]
 **File**: `aidlc-docs/construction/agent-service/code/business-logic-summary-increment3.md` (create) — models, event publisher, repository extensions
 
 ## Step 7 — Email adapter
