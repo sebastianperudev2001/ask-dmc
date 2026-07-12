@@ -88,10 +88,31 @@ class OutreachAgentService:
 
     async def _on_lead_event(self, event: LeadEvent) -> None:
         """BR-24: fire-and-forget — nunca await la generacion real dentro del callback
-        del publisher, para no bloquear el turno de chat que disparo el cambio de score."""
+        del publisher, para no bloquear el turno de chat que disparo el cambio de score.
+        `motivation_set` handles a race the HOT floor alone can't: the agent raises the
+        lead to hot (form completion) and calls set_lead_motivation as a separate, later
+        tool-call — so the auto-draft can already exist, generated while motivation was
+        still UNDEFINED, by the time motivation is actually known."""
+        if event.event_type == "motivation_set" and event.lead.score == LeadScore.HOT:
+            asyncio.create_task(self._regenerate_stale_auto_draft(event.lead.id))
+            return
         if event.event_type != "score_changed" or event.lead.score != LeadScore.HOT:
             return
         asyncio.create_task(self._generate_draft_from_auto_trigger(event.lead.id))
+
+    async def _regenerate_stale_auto_draft(self, lead_id: str) -> None:
+        """Discards and regenerates the active AUTO draft if one already exists — the
+        motivation_set event only ever fires once per lead, so this can't loop or
+        re-fire on unrelated later saves. Leaves ON_DEMAND drafts (staff-generated)
+        alone; only ever regenerates its own auto-trigger's output."""
+        try:
+            existing = await self._draft_repository.find_active_by_lead_id(lead_id)
+            if existing is None or existing.trigger != DraftTrigger.AUTO:
+                return
+            await self._draft_repository.mark_discarded(existing.draft_id)
+            await self.generate_draft(lead_id, DraftTrigger.AUTO)
+        except Exception:  # noqa: BLE001 - BR-27: nunca debe escapar hacia el publisher
+            logger.exception("auto_draft_regeneration_failed", extra={"lead_id": lead_id})
 
     async def _generate_draft_from_auto_trigger(self, lead_id: str) -> None:
         try:

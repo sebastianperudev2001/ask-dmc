@@ -342,3 +342,75 @@ async def test_lead_created_event_does_not_trigger_auto_draft():
     await asyncio.sleep(0.01)
 
     assert await draft_repository.find_active_by_lead_id(lead.id) is None
+
+
+async def test_motivation_set_event_regenerates_a_stale_auto_draft():
+    lead = _lead()
+    draft_repository = FakeDraftRepository()
+    stale = OutreachDraft(
+        draft_id="draft-stale",
+        lead_id=lead.id,
+        subject="Asunto viejo",
+        body="Cuerpo viejo sin motivacion.",
+        created_at=datetime.now(timezone.utc),
+        trigger=DraftTrigger.AUTO,
+    )
+    await draft_repository.save(stale)
+    publisher = LeadEventPublisher()
+    _build_service(
+        lead_repository=FakeLeadRepository([lead]),
+        draft_repository=draft_repository,
+        lead_event_publisher=publisher,
+    )
+
+    await publisher.publish(LeadEvent(event_type="motivation_set", lead=lead))
+    await asyncio.sleep(0.01)
+
+    active = await draft_repository.find_active_by_lead_id(lead.id)
+    assert active is not None
+    assert active.draft_id != "draft-stale"
+    stale_reloaded = await draft_repository.find_by_id("draft-stale")
+    assert stale_reloaded.status == DraftStatus.DISCARDED
+
+
+async def test_motivation_set_event_does_nothing_when_no_draft_exists_yet():
+    lead = _lead()
+    draft_repository = FakeDraftRepository()
+    publisher = LeadEventPublisher()
+    _build_service(
+        lead_repository=FakeLeadRepository([lead]),
+        draft_repository=draft_repository,
+        lead_event_publisher=publisher,
+    )
+
+    await publisher.publish(LeadEvent(event_type="motivation_set", lead=lead))
+    await asyncio.sleep(0.01)
+
+    assert await draft_repository.find_active_by_lead_id(lead.id) is None
+
+
+async def test_motivation_set_event_leaves_an_on_demand_draft_alone():
+    lead = _lead()
+    draft_repository = FakeDraftRepository()
+    on_demand = OutreachDraft(
+        draft_id="draft-on-demand",
+        lead_id=lead.id,
+        subject="Generado por staff",
+        body="...",
+        created_at=datetime.now(timezone.utc),
+        trigger=DraftTrigger.ON_DEMAND,
+    )
+    await draft_repository.save(on_demand)
+    publisher = LeadEventPublisher()
+    _build_service(
+        lead_repository=FakeLeadRepository([lead]),
+        draft_repository=draft_repository,
+        lead_event_publisher=publisher,
+    )
+
+    await publisher.publish(LeadEvent(event_type="motivation_set", lead=lead))
+    await asyncio.sleep(0.01)
+
+    active = await draft_repository.find_active_by_lead_id(lead.id)
+    assert active is not None
+    assert active.draft_id == "draft-on-demand"

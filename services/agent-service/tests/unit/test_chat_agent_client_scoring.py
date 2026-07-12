@@ -178,6 +178,24 @@ async def test_set_lead_motivation_falls_back_to_undefined_on_an_invalid_value()
     assert stored.motivation == Motivation.UNDEFINED
 
 
+@pytest.mark.asyncio
+async def test_set_lead_motivation_publishes_motivation_set_event():
+    lead = Lead(id="lead-1", created_at=datetime.now(timezone.utc), service_session_id="conv-1")
+    repo = FakeLeadRepository([lead])
+    publisher = LeadEventPublisher()
+    received = []
+
+    async def handler(event):
+        received.append(event)
+
+    publisher.subscribe(handler)
+    client = _build_client(repo, lead_event_publisher=publisher)
+
+    await client._set_lead_motivation("academic", "Quiere terminar una certificacion")
+
+    assert [e.event_type for e in received] == ["motivation_set"]
+
+
 # ── Incremento 3 — BackOffice: LeadEvent publishing (BR-29) ──
 
 

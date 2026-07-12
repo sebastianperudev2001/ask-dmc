@@ -269,15 +269,20 @@ class ChatAgentClient:
             motivation_enum = Motivation(motivation)
         except ValueError:
             motivation_enum = Motivation.UNDEFINED
-        await self._upsert_lead(motivation=motivation_enum, motivation_detail=motivation_detail)
+        await self._upsert_lead(
+            motivation=motivation_enum,
+            motivation_detail=motivation_detail,
+            event_type_override="motivation_set",
+        )
         return "Motivación registrada."
 
-    async def _upsert_lead(self, **fields) -> Lead | None:
+    async def _upsert_lead(self, *, event_type_override: str | None = None, **fields) -> Lead | None:
         """BR-21: incrementally persists a Lead keyed by `conversation_id` (stable per
         WS connection — see __init__ docstring for why service_session_id can't be used
         here). Incremento 3 (BR-29): publishes a LeadEvent on every save — "created" the
-        first time this conversation persists a Lead, "score_changed" otherwise. This is
-        the single insertion point that satisfies both FR-6/FR-8 (board updates,
+        first time this conversation persists a Lead, "score_changed" otherwise (or
+        `event_type_override` if given, e.g. "motivation_set" — see _set_lead_motivation).
+        This is the single insertion point that satisfies both FR-6/FR-8 (board updates,
         LeadBroadcaster) and FR-10 (auto-draft trigger, OutreachAgentService) without
         either of those two subscribers knowing about the other (Application Design,
         Q2 = A)."""
@@ -293,7 +298,7 @@ class ChatAgentClient:
             setattr(lead, key, value)
         await self._lead_repository.save(lead)
         if self._lead_event_publisher is not None:
-            event_type = "created" if is_new else "score_changed"
+            event_type = "created" if is_new else (event_type_override or "score_changed")
             await self._lead_event_publisher.publish(LeadEvent(event_type=event_type, lead=lead))
         return lead
 

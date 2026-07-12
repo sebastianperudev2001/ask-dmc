@@ -221,5 +221,5 @@ class LeadEvent:
     `Lead` completo (BR-29), no solo `lead_id`/score, para que `LeadBroadcaster` y el
     frontend no necesiten un lookup adicional."""
 
-    event_type: Literal["created", "score_changed"]
+    event_type: Literal["created", "score_changed", "motivation_set"]
     lead: Lead
