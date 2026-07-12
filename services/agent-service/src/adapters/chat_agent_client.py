@@ -53,7 +53,10 @@ _AGENT_INSTRUCTIONS = (
     "Eres el asesor de ventas de DMC Institute, un asistente de IA (identificate como "
     "tal si te preguntan). Conversa libremente con el visitante para entender su "
     "background profesional, motivacion y que quiere aprender — nunca presentes "
-    "formularios ni hagas varias preguntas en el mismo turno. Cuando necesites datos "
+    "formularios ni hagas varias preguntas en el mismo turno. Si en cualquier momento "
+    "de la conversacion, incluso en el primer mensaje del visitante, notas que ya esta "
+    "decidido a inscribirse (no solo explorando opciones), invoca flag_purchase_intent "
+    "con una razon breve, antes de pedir mas datos. Cuando necesites datos "
     "estructurados de calificacion (presupuesto, duracion maxima disponible en semanas, "
     "background profesional, stack deseado, nombre completo y email de contacto), invoca "
     "collect_profile_data con los valores que ya infieras de la conversacion (nombre y "
@@ -184,6 +187,16 @@ class ChatAgentClient:
                         "compra de un programa especifico."
                     ),
                 ),
+                tool(
+                    self._flag_purchase_intent,
+                    name="flag_purchase_intent",
+                    description=(
+                        "Registra que el visitante ya muestra intencion de compra clara "
+                        "y decidida (no solo exploracion), incluso si es en su primer "
+                        "mensaje y aun no tienes sus datos de contacto. Llamala en cuanto "
+                        "detectes esa senal, antes de pedir mas datos."
+                    ),
+                ),
             ],
         )
 
@@ -219,6 +232,14 @@ class ChatAgentClient:
         if result is not None:
             score, justification = result
             await self._upsert_lead(score=score, score_justification=justification)
+
+    async def _flag_purchase_intent(self, reason: str) -> str:
+        """Tool: the agent calls this as soon as it detects the visitor is already
+        decided/certain about enrolling — often but not necessarily on their very
+        first message — to raise the lead's floor to warm even before contact data
+        is collected."""
+        await self._raise_score_floor(LeadScore.WARM, f"Intención de compra temprana: {reason}")
+        return "Señal de intención de compra registrada."
 
     async def _upsert_lead(self, **fields) -> Lead | None:
         """BR-21: incrementally persists a Lead keyed by `conversation_id` (stable per

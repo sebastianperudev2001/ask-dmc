@@ -106,6 +106,50 @@ async def test_record_user_message_never_downgrades_an_already_hot_lead():
     assert stored.score_justification == "Expresó intención de compra con datos de contacto completos."
 
 
+@pytest.mark.asyncio
+async def test_flag_purchase_intent_raises_score_to_warm():
+    lead = Lead(id="lead-1", created_at=datetime.now(timezone.utc), service_session_id="conv-1")
+    repo = FakeLeadRepository([lead])
+    client = _build_client(repo)
+
+    await client._flag_purchase_intent("Dijo que quiere inscribirse ya mismo")
+
+    stored = await repo.find_by_service_session_id("conv-1")
+    assert stored.score == LeadScore.WARM
+    assert "Dijo que quiere inscribirse ya mismo" in stored.score_justification
+
+
+@pytest.mark.asyncio
+async def test_flag_purchase_intent_creates_a_lead_when_none_exists_yet():
+    repo = FakeLeadRepository()
+    client = _build_client(repo)
+
+    await client._flag_purchase_intent("Primer mensaje: quiere comprar de inmediato")
+
+    stored = await repo.find_by_service_session_id("conv-1")
+    assert stored is not None
+    assert stored.score == LeadScore.WARM
+
+
+@pytest.mark.asyncio
+async def test_flag_purchase_intent_never_downgrades_an_already_hot_lead():
+    lead = Lead(
+        id="lead-1",
+        created_at=datetime.now(timezone.utc),
+        service_session_id="conv-1",
+        score=LeadScore.HOT,
+        score_justification="ya hot",
+    )
+    repo = FakeLeadRepository([lead])
+    client = _build_client(repo)
+
+    await client._flag_purchase_intent("mensaje temprano")
+
+    stored = await repo.find_by_service_session_id("conv-1")
+    assert stored.score == LeadScore.HOT
+    assert stored.score_justification == "ya hot"
+
+
 # ── Incremento 3 — BackOffice: LeadEvent publishing (BR-29) ──
 
 
