@@ -94,6 +94,16 @@ describe("toLeadWireEvent (wire protocol translation)", () => {
     })
   })
 
+  it("translates a lead_event message (motivation_set)", () => {
+    expect(
+      toLeadWireEvent({ type: "lead_event", event_type: "motivation_set", lead: rawLead })
+    ).toEqual({
+      _tag: "leadEvent",
+      eventType: "motivation_set",
+      lead: expectedLead,
+    })
+  })
+
   it("returns null for unrecognized message types", () => {
     expect(toLeadWireEvent({ type: "unknown" })).toBeNull()
   })

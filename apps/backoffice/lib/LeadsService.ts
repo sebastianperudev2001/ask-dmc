@@ -7,7 +7,7 @@ import type { LeadOut } from "@/types/leads"
 // frontend-components.md Section 1/3).
 export type LeadWireEvent =
   | { _tag: "snapshot"; leads: LeadOut[] }
-  | { _tag: "leadEvent"; eventType: "created" | "score_changed"; lead: LeadOut }
+  | { _tag: "leadEvent"; eventType: "created" | "score_changed" | "motivation_set"; lead: LeadOut }
 
 export class LeadsService extends Context.Tag("LeadsService")<
   LeadsService,

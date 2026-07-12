@@ -187,7 +187,7 @@ class LeadsSnapshotOut(BaseModel):
 
 class LeadEventOut(BaseModel):
     type: Literal["lead_event"] = "lead_event"
-    event_type: Literal["created", "score_changed"]
+    event_type: Literal["created", "score_changed", "motivation_set"]
     lead: LeadOut
 
 

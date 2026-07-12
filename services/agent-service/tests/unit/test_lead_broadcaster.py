@@ -65,6 +65,17 @@ async def test_broadcast_sends_lead_event_to_connected_clients():
     assert websocket.sent[0]["event_type"] == "created"
 
 
+async def test_broadcast_sends_motivation_set_lead_event_to_connected_clients():
+    broadcaster = LeadBroadcaster(LeadQueryService(FakeLeadRepository([])))
+    websocket = FakeWebSocket()
+    broadcaster._connections.append(websocket)  # bypass handle_connection's blocking loop
+
+    await broadcaster.broadcast(LeadEvent(event_type="motivation_set", lead=_lead()))
+
+    assert websocket.sent[0]["type"] == "lead_event"
+    assert websocket.sent[0]["event_type"] == "motivation_set"
+
+
 async def test_broadcast_drops_a_connection_whose_send_fails():
     broadcaster = LeadBroadcaster(LeadQueryService(FakeLeadRepository([])))
     dead = FakeWebSocket(fail_on_send=True)

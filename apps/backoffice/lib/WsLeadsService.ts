@@ -48,7 +48,7 @@ export const toLeadWireEvent = (msg: ServerMessage): LeadWireEvent | null => {
       return { _tag: "snapshot", leads: leads.map(toLeadOut) }
     }
     case "lead_event": {
-      const eventType = msg.event_type as "created" | "score_changed"
+      const eventType = msg.event_type as "created" | "score_changed" | "motivation_set"
       return { _tag: "leadEvent", eventType, lead: toLeadOut(msg.lead as RawLead) }
     }
     default:
