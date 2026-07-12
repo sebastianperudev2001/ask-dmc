@@ -40,3 +40,4 @@ apps/backoffice/.next/
 apps/backoffice/node_modules/
 apps/backoffice/.env.local
 next-env.d.ts
+learning-notes.md
