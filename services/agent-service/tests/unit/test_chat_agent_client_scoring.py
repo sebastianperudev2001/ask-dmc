@@ -1,6 +1,7 @@
-"""BR-17b — engagement-based lead scoring wired into ChatAgentClient. `Agent` and
-`FoundryChatClient` are patched at construction time (no real Foundry/network calls);
-only the scoring wiring (record_user_message, _apply_engagement_floor) is under test."""
+"""BR-17b — lead scoring wired into ChatAgentClient. `Agent` and `FoundryChatClient`
+are patched at construction time (no real Foundry/network calls); only the scoring
+wiring (record_user_message, _raise_score_floor, _flag_purchase_intent,
+_collect_profile_data's form-completion floor) is under test."""
 from __future__ import annotations
 
 from datetime import datetime, timezone

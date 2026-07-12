@@ -34,7 +34,7 @@ from src.adapters.mercadopago_client import MercadoPagoPaymentClient
 from src.adapters.retry_policy import RetryPolicy
 from src.domain.errors import AgentUnavailableError, PaymentServiceUnavailableError
 from src.domain.lead_event_publisher import LeadEventPublisher
-from src.domain.lead_scoring import apply_score_floor
+from src.domain.lead_scoring import apply_score_floor, message_count_floor
 from src.domain.models import (
     Lead,
     LeadEvent,
@@ -201,20 +201,21 @@ class ChatAgentClient:
         self._conversation_id = conversation_id
 
     async def record_user_message(self) -> None:
-        """BR-17b: called once per user turn (ChatWebSocketHandler) so the engagement
+        """BR-17b: called once per user turn (ChatWebSocketHandler) so the message-count
         floor (5+ user messages -> warm, 10+ -> hot) re-evaluates after every message."""
         self._user_message_count += 1
-        await self._apply_engagement_floor()
+        floor = message_count_floor(self._user_message_count)
+        if floor is not None:
+            await self._raise_score_floor(*floor)
 
-    async def _apply_engagement_floor(self, *, form_completed: bool = False) -> None:
-        """BR-17b: raises Lead.score to the engagement floor if it exceeds the current
-        score — monotonic (never downgrades), see apply_score_floor()."""
+    async def _raise_score_floor(self, floor_score: LeadScore, floor_justification: str) -> None:
+        """Merges a computed score floor into the lead's persisted score — monotonic
+        (never downgrades). Shared by record_user_message (message-count floor),
+        _flag_purchase_intent (early-certainty floor), and _collect_profile_data
+        (form-completion floor)."""
         lead = await self._lead_repository.find_by_service_session_id(self._conversation_id)
         current_score = lead.score if lead is not None else LeadScore.COLD
-        current_justification = lead.score_justification if lead is not None else ""
-        result = apply_score_floor(
-            current_score, current_justification, self._user_message_count, form_completed
-        )
+        result = apply_score_floor(current_score, floor_score, floor_justification)
         if result is not None:
             score, justification = result
             await self._upsert_lead(score=score, score_justification=justification)
@@ -288,7 +289,9 @@ class ChatAgentClient:
             name=result["name"],
             email=result["email"],
         )
-        await self._apply_engagement_floor(form_completed=True)
+        await self._raise_score_floor(
+            LeadScore.HOT, "Completó el formulario de perfil con datos de contacto confirmados."
+        )
 
         return (
             f"Datos confirmados por el usuario: nombre={result['name']}, "
