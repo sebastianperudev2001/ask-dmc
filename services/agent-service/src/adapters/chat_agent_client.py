@@ -15,6 +15,7 @@ no special framework support, just an async function that doesn't return immedia
 from __future__ import annotations
 
 import asyncio
+import logging
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
@@ -26,6 +27,8 @@ from agent_framework.foundry import FoundryChatClient
 from azure.identity import DefaultAzureCredential
 
 from datetime import datetime, timezone
+
+logger = logging.getLogger("agent_service.chat_agent_client")
 
 from src.adapters.mercadopago_client import MercadoPagoPaymentClient
 from src.adapters.retry_policy import RetryPolicy
@@ -52,10 +55,10 @@ _AGENT_INSTRUCTIONS = (
     "background profesional, motivacion y que quiere aprender — nunca presentes "
     "formularios ni hagas varias preguntas en el mismo turno. Cuando necesites datos "
     "estructurados de calificacion (presupuesto, duracion maxima disponible en semanas, "
-    "background profesional, stack deseado) que aun no tengas, invoca la tool "
-    "collect_profile_data con los valores que ya infieras de la conversacion (o valores "
-    "razonables si no los tienes) — el usuario los confirmara o corregira en un widget. "
-    "Una vez tengas esos 4 datos confirmados, invoca get_course_recommendations con "
+    "background profesional, stack deseado, nombre completo y email de contacto), invoca "
+    "collect_profile_data con los valores que ya infieras de la conversacion (nombre y "
+    "email vacios si aun no te los dio) — el usuario los confirmara o completara en un "
+    "widget. Una vez tengas esos datos confirmados, invoca get_course_recommendations con "
     "ellos para buscar programas reales del catalogo — nunca inventes cursos, precios "
     "ni mallas curriculares fuera de lo que esa tool te devuelva. Si esa tool te dice "
     "que no hay match exacto y te sugiere un rango ampliado, ofrece esa alternativa al "
@@ -146,15 +149,22 @@ class ChatAgentClient:
             client=client,
             name=_AGENT_NAME,
             instructions=_AGENT_INSTRUCTIONS,
+            # "summary" is required for the model to return any text_reasoning content at
+            # all (Responses API "reasoning" option) — without it, no reasoning is exposed
+            # regardless of the model's actual internal reasoning effort, so the FR-2
+            # logging in _log_reasoning_and_tool_calls would otherwise have nothing to log.
+            default_options={"reasoning": {"summary": "auto"}},
             tools=[
                 tool(
                     self._collect_profile_data,
                     name="collect_profile_data",
                     description=(
                         "Recolecta datos de perfil del usuario cuando aun no los tienes: "
-                        "presupuesto, duracion maxima en semanas, background profesional y "
-                        "stack deseado. Pasa tus mejores estimaciones basadas en la "
-                        "conversacion — el usuario las confirmara o corregira."
+                        "presupuesto, duracion maxima en semanas, background profesional, "
+                        "stack deseado, nombre completo y email de contacto. Pasa tus "
+                        "mejores estimaciones basadas en la conversacion (nombre/email "
+                        "vacios si el usuario aun no te los dio) — el usuario las "
+                        "confirmara o completara."
                     ),
                 ),
                 tool(
@@ -240,6 +250,8 @@ class ChatAgentClient:
         max_duration_weeks: int,
         professional_background: str,
         desired_stack: str,
+        name: str = "",
+        email: str = "",
     ) -> str:
         """Tool (BR-16): the agent decides when to call this. Pauses (business-logic-model.md
         Section 8.1) until the WS handler resolves the matching future with the user's
@@ -257,6 +269,8 @@ class ChatAgentClient:
             "max_duration_weeks": max_duration_weeks,
             "professional_background": professional_background,
             "desired_stack": desired_stack,
+            "name": name or None,
+            "email": email or None,
         }
         future = self._pending_tool_calls.create(call_id)
         await self._on_profile_data_requested(ProfileDataRequested(call_id=call_id, prefill=prefill))
@@ -271,11 +285,14 @@ class ChatAgentClient:
 
         await self._upsert_lead(
             profile_summary=f"{result['professional_background']} — busca: {result['desired_stack']}",
+            name=result["name"],
+            email=result["email"],
         )
         await self._apply_engagement_floor(form_completed=True)
 
         return (
-            f"Datos confirmados por el usuario: presupuesto={result['budget']}, "
+            f"Datos confirmados por el usuario: nombre={result['name']}, "
+            f"email={result['email']}, presupuesto={result['budget']}, "
             f"duracion_maxima_semanas={result['max_duration_weeks']}, "
             f"background={result['professional_background']}, "
             f"stack_deseado={result['desired_stack']}"
@@ -360,7 +377,28 @@ class ChatAgentClient:
         )
         return f"Link de pago generado: {order.checkout_url}"
 
+    def _log_reasoning_and_tool_calls(self, update: Any) -> None:
+        """FR-2/FR-3 (chat-logging-requirements.md, DIV-16): logs the framework's exposed
+        reasoning stream (content type "text_reasoning") and tool-call decisions (content
+        type "function_call") verbatim, by explicit user decision for this demo project."""
+        for content in update.contents:
+            if content.type == "text_reasoning" and content.text:
+                logger.info(
+                    "chat_agent_reasoning",
+                    extra={"conversation_id": self._conversation_id, "reasoning": content.text},
+                )
+            elif content.type == "function_call":
+                logger.info(
+                    "chat_agent_tool_call",
+                    extra={
+                        "conversation_id": self._conversation_id,
+                        "tool_name": content.name,
+                        "tool_arguments": content.arguments,
+                    },
+                )
+
     def _drain_events(self, update: Any) -> list[ChatEvent]:
+        self._log_reasoning_and_tool_calls(update)
         events: list[ChatEvent] = []
         if update.text:
             events.append(TextDelta(text=update.text))
