@@ -1,6 +1,18 @@
 import type { LeadOut } from '@/types/leads'
 import DraftPanel from './DraftPanel'
 
+// ── Pure (exported for testing) ─────────────────────────────────────────────
+export const motivationLabel = (motivation: string): string => {
+  const labels: Record<string, string> = {
+    growth: 'Crecimiento profesional',
+    salary: 'Aumento salarial',
+    company_requirement: 'Requisito de la empresa',
+    academic: 'Fines académicos',
+    undefined: 'Sin definir aún',
+  }
+  return labels[motivation] ?? motivation
+}
+
 type LeadDetailModalProps = {
   lead: LeadOut | null
   onClose: () => void
@@ -101,7 +113,7 @@ const LeadDetailModal = ({ lead, onClose }: LeadDetailModalProps) => {
 
             <dt style={{ color: 'var(--color-text-muted)' }}>Motivación</dt>
             <dd style={{ margin: 0 }}>
-              {lead.motivation}
+              {motivationLabel(lead.motivation)}
               {lead.motivationDetail ? ` — ${lead.motivationDetail}` : ''}
             </dd>
 
