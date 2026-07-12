@@ -39,6 +39,7 @@ from src.domain.models import (
     Lead,
     LeadEvent,
     LeadScore,
+    Motivation,
     ProfileQuery,
     RecommendationCandidate,
     RecommendationRequest,
@@ -61,15 +62,19 @@ _AGENT_INSTRUCTIONS = (
     "background profesional, stack deseado, nombre completo y email de contacto), invoca "
     "collect_profile_data con los valores que ya infieras de la conversacion (nombre y "
     "email vacios si aun no te los dio) — el usuario los confirmara o completara en un "
-    "widget. Una vez tengas esos datos confirmados, invoca get_course_recommendations con "
-    "ellos para buscar programas reales del catalogo — nunca inventes cursos, precios "
-    "ni mallas curriculares fuera de lo que esa tool te devuelva. Si esa tool te dice "
-    "que no hay match exacto y te sugiere un rango ampliado, ofrece esa alternativa al "
-    "usuario en tus propias palabras y, si acepta, vuelve a llamar a "
-    "get_course_recommendations con accept_relaxed_filters=true. Cuando el usuario "
-    "exprese intencion de compra de un programa, invoca create_payment_link con el "
-    "monto y la descripcion del programa. Si el usuario pide hablar con una persona, "
-    "dile que alguien del equipo se pondra en contacto, sin dar telefono ni WhatsApp."
+    "widget. Apenas collect_profile_data se resuelva con los datos confirmados, invoca "
+    "set_lead_motivation infiriendo la categoria (growth, salary, company_requirement o "
+    "academic) a partir del background profesional y stack deseado ya confirmados — "
+    "nunca se lo preguntes directamente al visitante. Luego invoca "
+    "get_course_recommendations con esos datos confirmados para buscar programas reales "
+    "del catalogo — nunca inventes cursos, precios ni mallas curriculares fuera de lo "
+    "que esa tool te devuelva. Si esa tool te dice que no hay match exacto y te sugiere "
+    "un rango ampliado, ofrece esa alternativa al usuario en tus propias palabras y, si "
+    "acepta, vuelve a llamar a get_course_recommendations con "
+    "accept_relaxed_filters=true. Cuando el usuario exprese intencion de compra de un "
+    "programa, invoca create_payment_link con el monto y la descripcion del programa. "
+    "Si el usuario pide hablar con una persona, dile que alguien del equipo se pondra "
+    "en contacto, sin dar telefono ni WhatsApp."
 )
 
 
@@ -197,6 +202,19 @@ class ChatAgentClient:
                         "detectes esa senal, antes de pedir mas datos."
                     ),
                 ),
+                tool(
+                    self._set_lead_motivation,
+                    name="set_lead_motivation",
+                    description=(
+                        "Registra la motivacion del visitante para aprender, inferida "
+                        "del background profesional y stack deseado ya confirmados por "
+                        "el usuario en el widget de collect_profile_data. Llamala "
+                        "siempre inmediatamente despues de que collect_profile_data se "
+                        "resuelva, antes de cualquier otra tool. motivation debe ser "
+                        "exactamente uno de: growth, salary, company_requirement, "
+                        "academic."
+                    ),
+                ),
             ],
         )
 
@@ -240,6 +258,19 @@ class ChatAgentClient:
         is collected."""
         await self._raise_score_floor(LeadScore.WARM, f"Intención de compra temprana: {reason}")
         return "Señal de intención de compra registrada."
+
+    async def _set_lead_motivation(self, motivation: str, motivation_detail: str = "") -> str:
+        """Tool: the agent calls this immediately after collect_profile_data resolves,
+        inferring the category from the now-confirmed professional_background/
+        desired_stack — never asked to the visitor directly. Falls back to UNDEFINED
+        on an unrecognized value (defensive boundary parsing of the agent's tool-call
+        arguments, same treatment as any other external input)."""
+        try:
+            motivation_enum = Motivation(motivation)
+        except ValueError:
+            motivation_enum = Motivation.UNDEFINED
+        await self._upsert_lead(motivation=motivation_enum, motivation_detail=motivation_detail)
+        return "Motivación registrada."
 
     async def _upsert_lead(self, **fields) -> Lead | None:
         """BR-21: incrementally persists a Lead keyed by `conversation_id` (stable per
