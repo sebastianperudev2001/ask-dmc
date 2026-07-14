@@ -56,6 +56,8 @@ describe("ChatService contract (Incremento 2 — WebSocket, business-logic-model
             maxDurationWeeks: 8,
             professionalBackground: "analista",
             desiredStack: "azure",
+            name: "Maria Lopez",
+            email: "maria@example.com",
           })
         }),
         makeTestLayer([], sent)

@@ -32,7 +32,7 @@ const Composer = ({ onSend, disabled }: ComposerProps) => {
       style={{
         position: 'absolute',
         bottom: 0,
-        left: 272,
+        left: 0,
         right: 0,
         padding: '14px 28px 22px',
         background: 'linear-gradient(to bottom, transparent 0%, var(--color-bg) 30%)',

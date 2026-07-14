@@ -256,6 +256,7 @@ class ChatAgentClient:
         decided/certain about enrolling — often but not necessarily on their very
         first message — to raise the lead's floor to warm even before contact data
         is collected."""
+        self._log_tool_call("flag_purchase_intent", reason=reason)
         await self._raise_score_floor(LeadScore.WARM, f"Intención de compra temprana: {reason}")
         return "Señal de intención de compra registrada."
 
@@ -265,6 +266,9 @@ class ChatAgentClient:
         desired_stack — never asked to the visitor directly. Falls back to UNDEFINED
         on an unrecognized value (defensive boundary parsing of the agent's tool-call
         arguments, same treatment as any other external input)."""
+        self._log_tool_call(
+            "set_lead_motivation", motivation=motivation, motivation_detail=motivation_detail
+        )
         try:
             motivation_enum = Motivation(motivation)
         except ValueError:
@@ -321,6 +325,15 @@ class ChatAgentClient:
         clicking "Nueva conversación" instead of submitting it), which permanently
         deadlocks the connection: the main loop is blocked right here and never reaches a
         point where it would notice the disconnect on its own."""
+        self._log_tool_call(
+            "collect_profile_data",
+            budget=budget,
+            max_duration_weeks=max_duration_weeks,
+            professional_background=professional_background,
+            desired_stack=desired_stack,
+            name=name,
+            email=email,
+        )
         call_id = f"call_{uuid.uuid4().hex}"
         prefill = {
             "budget": budget,
@@ -371,6 +384,14 @@ class ChatAgentClient:
         filters, returns a text description for the agent to offer conversationally
         (Clarification 4 = A — no widget for this, just natural language) rather than
         pausing like collect_profile_data does."""
+        self._log_tool_call(
+            "get_course_recommendations",
+            budget=budget,
+            max_duration_weeks=max_duration_weeks,
+            professional_background=professional_background,
+            desired_stack=desired_stack,
+            accept_relaxed_filters=accept_relaxed_filters,
+        )
         request = RecommendationRequest(
             budget=Decimal(str(budget)),
             max_duration_weeks=max_duration_weeks,
@@ -416,6 +437,7 @@ class ChatAgentClient:
         `conversation_id` (stable per WS connection, see __init__ docstring) so the
         webhook can correlate the payment back to the same Lead regardless of which
         turn's Foundry service_session_id happened to be current."""
+        self._log_tool_call("create_payment_link", amount=amount, description=description)
         try:
             order = await self._payment_client.create_preference(
                 Decimal(str(amount)), description, external_reference=self._conversation_id
@@ -437,28 +459,33 @@ class ChatAgentClient:
         )
         return f"Link de pago generado: {order.checkout_url}"
 
-    def _log_reasoning_and_tool_calls(self, update: Any) -> None:
-        """FR-2/FR-3 (chat-logging-requirements.md, DIV-16): logs the framework's exposed
-        reasoning stream (content type "text_reasoning") and tool-call decisions (content
-        type "function_call") verbatim, by explicit user decision for this demo project."""
+    def _log_tool_call(self, tool_name: str, **arguments: Any) -> None:
+        """FR-2/FR-3 (chat-logging-requirements.md, DIV-16): logs tool-call decisions
+        verbatim, by explicit user decision for this demo project. Called from each tool
+        method with its already-parsed kwargs (not from the raw update stream) — the
+        framework streams function-call arguments token-by-token across many `update`
+        chunks, so logging from there produced dozens of fragmented lines per call."""
+        logger.info(
+            "chat_agent_tool_call",
+            extra={
+                "conversation_id": self._conversation_id,
+                "tool_name": tool_name,
+                "tool_arguments": arguments,
+            },
+        )
+
+    def _log_reasoning(self, update: Any) -> None:
+        """FR-2 (chat-logging-requirements.md, DIV-16): logs the framework's exposed
+        reasoning stream (content type "text_reasoning") verbatim."""
         for content in update.contents:
             if content.type == "text_reasoning" and content.text:
                 logger.info(
                     "chat_agent_reasoning",
                     extra={"conversation_id": self._conversation_id, "reasoning": content.text},
                 )
-            elif content.type == "function_call":
-                logger.info(
-                    "chat_agent_tool_call",
-                    extra={
-                        "conversation_id": self._conversation_id,
-                        "tool_name": content.name,
-                        "tool_arguments": content.arguments,
-                    },
-                )
 
     def _drain_events(self, update: Any) -> list[ChatEvent]:
-        self._log_reasoning_and_tool_calls(update)
+        self._log_reasoning(update)
         events: list[ChatEvent] = []
         if update.text:
             events.append(TextDelta(text=update.text))

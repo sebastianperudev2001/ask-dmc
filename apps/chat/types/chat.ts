@@ -9,6 +9,8 @@ export type ProfileDataPrefill = {
   maxDurationWeeks: number | null
   professionalBackground: string | null
   desiredStack: string | null
+  name: string | null
+  email: string | null
 }
 
 export type ProfileData = {
@@ -16,6 +18,8 @@ export type ProfileData = {
   maxDurationWeeks: number
   professionalBackground: string
   desiredStack: string
+  name: string
+  email: string
 }
 
 export type ChatPhase = 'streaming' | 'awaitingProfileData' | 'done'

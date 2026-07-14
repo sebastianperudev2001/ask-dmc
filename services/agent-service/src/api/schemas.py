@@ -71,6 +71,12 @@ class ProfileDataSubmittedIn(BaseModel):
     max_duration_weeks: int = Field(gt=0, le=MAX_DURATION_WEEKS)
     professional_background: str = Field(min_length=1, max_length=MAX_TEXT_FIELD_LENGTH)
     desired_stack: str = Field(min_length=1, max_length=MAX_TEXT_FIELD_LENGTH)
+    # Added so the Lead persisted from this submission (BR-21) can carry an identity —
+    # previously nothing in the chat flow ever set Lead.name/email, leaving every lead
+    # anonymous in the BackOffice and outreach email permanently unsendable (DraftPanel
+    # requires a non-null email to enable "Send").
+    name: str = Field(min_length=1, max_length=MAX_TEXT_FIELD_LENGTH)
+    email: str = Field(min_length=1, max_length=254, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
 class ProfileDataPrefill(BaseModel):
@@ -81,6 +87,8 @@ class ProfileDataPrefill(BaseModel):
     max_duration_weeks: int | None = None
     professional_background: str | None = None
     desired_stack: str | None = None
+    name: str | None = None
+    email: str | None = None
 
 
 class ProfileDataRequestedOut(BaseModel):

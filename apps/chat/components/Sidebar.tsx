@@ -3,6 +3,7 @@ import { Icon } from './icons'
 import type { HistoryGroup } from '@/types/chat'
 
 type SidebarProps = {
+  open: boolean
   dark: boolean
   onToggleDark: () => void
   onNew: () => void
@@ -10,19 +11,22 @@ type SidebarProps = {
   onSelectConversation: (conversationId: string) => void
 }
 
-const Sidebar = ({ dark, onToggleDark, onNew, historyGroups, onSelectConversation }: SidebarProps) => {
+const Sidebar = ({ open, dark, onToggleDark, onNew, historyGroups, onSelectConversation }: SidebarProps) => {
   return (
     <aside
       style={{
-        width: 272,
+        width: open ? 272 : 0,
         background: 'var(--color-surface)',
-        borderRight: '1px solid var(--color-border)',
+        borderRight: open ? '1px solid var(--color-border)' : 'none',
         display: 'flex',
         flexDirection: 'column',
         minHeight: 0,
         flexShrink: 0,
+        overflow: 'hidden',
+        transition: 'width .18s ease, border-color .18s ease',
       }}
     >
+      <div style={{ width: 272, flexShrink: 0, display: 'flex', flexDirection: 'column', minHeight: 0, height: '100%' }}>
       {/* Header */}
       <div
         style={{
@@ -111,21 +115,6 @@ const Sidebar = ({ dark, onToggleDark, onNew, historyGroups, onSelectConversatio
           </div>
         ))}
       </div>
-
-      {/* Footer */}
-      <div style={{ borderTop: '1px solid var(--color-border)', padding: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
-          <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--color-surface-3)', color: 'var(--color-text)', display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 600, flexShrink: 0 }}>
-            MC
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>María Castillo</div>
-            <div style={{ fontSize: 11, color: 'var(--color-text-faint)' }}>Estudiante · Plan Anual</div>
-          </div>
-        </div>
-        <button title="Ajustes" style={{ width: 32, height: 32, borderRadius: 8, border: '1px solid transparent', background: 'transparent', color: 'var(--color-text-muted)', display: 'grid', placeItems: 'center', cursor: 'pointer' }}>
-          <Icon name="settings" size={16} />
-        </button>
       </div>
     </aside>
   )

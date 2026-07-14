@@ -16,6 +16,7 @@ const ChatApp = () => {
   const { dark, toggle } = useDarkMode()
   const showWelcome = messages.length === 0
   const [historyGroups, setHistoryGroups] = useState<HistoryGroup[]>([])
+  const [sidebarOpen, setSidebarOpen] = useState(true)
 
   // Real conversation history for the Sidebar — replaces the hardcoded mock list (added
   // after user feedback: "el historial... no jala las sesiones creadas?").
@@ -26,16 +27,17 @@ const ChatApp = () => {
   }, [])
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '272px 1fr', height: '100vh', width: '100vw', background: 'var(--color-bg)' }}>
+    <div style={{ display: 'flex', height: '100vh', width: '100vw', background: 'var(--color-bg)' }}>
       <Sidebar
+        open={sidebarOpen}
         dark={dark}
         onToggleDark={toggle}
         onNew={clearMessages}
         historyGroups={historyGroups}
         onSelectConversation={switchConversation}
       />
-      <main style={{ display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0, background: 'var(--color-bg)', position: 'relative' }}>
-        <TopBar busy={busy} />
+      <main style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, minHeight: 0, background: 'var(--color-bg)', position: 'relative' }}>
+        <TopBar busy={busy} sidebarOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen((o) => !o)} />
         {showWelcome
           ? <Welcome onPick={sendMessage} />
           : <MessageList messages={messages} onSubmitProfileData={submitProfileData} />}

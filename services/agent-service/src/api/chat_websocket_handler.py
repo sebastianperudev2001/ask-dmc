@@ -115,6 +115,11 @@ class ChatWebSocketHandler:
                         conversation_id = message.conversation_id
                         agent_client.set_conversation_id(conversation_id)
                     conversation_id_resolved = True
+                print(message)
+                logger.info(
+                    "chat_entry_message_received",
+                    extra={"conversation_id": conversation_id, "user_message": message.text},
+                )
 
                 if session is None:
                     service_session_id = message.service_session_id
@@ -262,6 +267,8 @@ class ChatWebSocketHandler:
                         "max_duration_weeks": submitted.max_duration_weeks,
                         "professional_background": submitted.professional_background,
                         "desired_stack": submitted.desired_stack,
+                        "name": submitted.name,
+                        "email": submitted.email,
                     },
                 )
             elif message_type == "user_message":

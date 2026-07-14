@@ -39,6 +39,7 @@ az login
 ### Base de datos
 
 ```bash
+docker compose up -d    # Postgres 16 + pgvector en localhost:5434 (user postgres / demo)
 psql "$DATABASE_URL" -f migrations/001_create_courses.sql
 psql "$DATABASE_URL" -f migrations/002_create_leads_and_sessions.sql
 psql "$DATABASE_URL" -f migrations/003_create_conversation_messages.sql

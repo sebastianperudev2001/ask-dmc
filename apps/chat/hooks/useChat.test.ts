@@ -68,6 +68,8 @@ describe("applyProfileRequest / clearProfileRequest", () => {
       maxDurationWeeks: 8,
       professionalBackground: "analista",
       desiredStack: "azure",
+      name: "Maria Lopez",
+      email: "maria@example.com",
     }
     const updated = applyProfileRequest(initialBotMsg(), "call_1", prefill)
     expect(updated.phase).toBe("awaitingProfileData")
@@ -80,6 +82,8 @@ describe("applyProfileRequest / clearProfileRequest", () => {
       maxDurationWeeks: null,
       professionalBackground: null,
       desiredStack: null,
+      name: null,
+      email: null,
     }
     const requested = applyProfileRequest(initialBotMsg(), "call_1", prefill)
     const cleared = clearProfileRequest(requested)

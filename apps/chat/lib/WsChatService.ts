@@ -92,6 +92,8 @@ export const toChatEvent = (msg: ServerMessage): ChatEvent | null => {
         max_duration_weeks: number | null
         professional_background: string | null
         desired_stack: string | null
+        name: string | null
+        email: string | null
       }
       return {
         _tag: "profileDataRequested",
@@ -101,6 +103,8 @@ export const toChatEvent = (msg: ServerMessage): ChatEvent | null => {
           maxDurationWeeks: prefill.max_duration_weeks,
           professionalBackground: prefill.professional_background,
           desiredStack: prefill.desired_stack,
+          name: prefill.name,
+          email: prefill.email,
         },
       }
     }
@@ -200,6 +204,8 @@ export const WsChatServiceLive: Layer.Layer<ChatService, NetworkError> = Layer.e
           max_duration_weeks: data.maxDurationWeeks,
           professional_background: data.professionalBackground,
           desired_stack: data.desiredStack,
+          name: data.name,
+          email: data.email,
         }),
     }
   })

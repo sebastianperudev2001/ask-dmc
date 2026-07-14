@@ -26,6 +26,7 @@ dev = [
     "hypothesis==6.115.6",
     "numpy>=2.2.6",
     "websockets>=16.0",
+    "colorlog>=6.9.0",
 ]
 
 [tool.hatch.build.targets.wheel]

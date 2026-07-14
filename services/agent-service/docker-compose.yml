@@ -1,0 +1,13 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: agent-service-db
+    environment:
+      POSTGRES_PASSWORD: demo
+    ports:
+      - "5434:5432"
+    volumes:
+      - agent-service-db-data:/var/lib/postgresql/data
+
+volumes:
+  agent-service-db-data:

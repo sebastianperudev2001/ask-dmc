@@ -62,6 +62,8 @@ class FakeChatAgentClient:
                         "max_duration_weeks": 8,
                         "professional_background": "analista",
                         "desired_stack": "data",
+                        "name": None,
+                        "email": None,
                     },
                 )
             )

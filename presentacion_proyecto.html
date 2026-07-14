@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ask-dmc — Proyecto Integrador</title>
+  <style>
+    :root {
+      --bg: #070f1c;
+      --surface: #0f1e33;
+      --surface-2: #14294a;
+      --ink: #eaf1fb;
+      --muted: #8ea3c2;
+      --blue: #5a86ff;
+      --cyan: #22d3ee;
+      --cold: #7c8ba3;
+      --warm: #f5a524;
+      --hot: #fb4d6a;
+      --line: rgba(234, 241, 251, 0.10);
+      --mono: ui-monospace, 'SFMono-Regular', 'Cascadia Code', 'JetBrains Mono', Menlo, Consolas, monospace;
+      --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Tahoma, sans-serif;
+      --navh: 76px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.7;
+    }
+
+    ::selection {
+      background: var(--blue);
+      color: #fff;
+    }
+
+    a {
+      color: var(--cyan);
+    }
+
+    .wrap {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 0 28px;
+    }
+
+    /* ---------- prompt-style eyebrow ---------- */
+    .prompt {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      letter-spacing: 0.02em;
+      color: var(--cyan);
+    }
+
+    .prompt::before {
+      content: "›";
+      color: var(--blue);
+      font-weight: 700;
+    }
+
+    /* ---------- slide mechanics ---------- */
+    .slide {
+      display: none;
+      min-height: 100vh;
+      width: 100%;
+      align-items: flex-start;
+      padding: 104px 0 calc(var(--navh) + 32px);
+      overflow-y: auto;
+    }
+
+    .slide.active {
+      display: flex;
+    }
+
+    .slide>.wrap {
+      width: 100%;
+      margin: 0;
+    }
+
+    .slide.hero,
+    .slide.closing {
+      align-items: center;
+    }
+
+    .slide.hero>.wrap,
+    .slide.closing>.wrap {
+      margin: auto 0;
+    }
+
+    /* ---------- hero slide ---------- */
+    .slide.hero {
+      background:
+        radial-gradient(60% 50% at 15% 0%, rgba(90, 134, 255, 0.16), transparent 60%),
+        radial-gradient(50% 40% at 100% 10%, rgba(34, 211, 238, 0.10), transparent 60%);
+    }
+
+    .slide.hero.active .wrap {
+      animation: rise 0.7s ease both;
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .kicker {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 22px;
+    }
+
+    h1.title {
+      font-family: var(--mono);
+      font-size: clamp(2.4rem, 6vw, 3.6rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.05;
+      margin-bottom: 20px;
+    }
+
+    h1.title span {
+      color: var(--cyan);
+    }
+
+    .lede {
+      font-size: 1.15rem;
+      color: var(--muted);
+      max-width: 56ch;
+      margin-bottom: 40px;
+    }
+
+    /* ---------- signature: chat transcript + live score meter ---------- */
+    .demo {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 0;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      background: var(--surface);
+      box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.6);
+    }
+
+    .transcript {
+      padding: 22px 24px;
+      border-right: 1px solid var(--line);
+    }
+
+    .transcript .win-dots {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .win-dots span {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--line);
+    }
+
+    .win-dots span:nth-child(1) {
+      background: var(--hot);
+      opacity: .6;
+    }
+
+    .win-dots span:nth-child(2) {
+      background: var(--warm);
+      opacity: .6;
+    }
+
+    .win-dots span:nth-child(3) {
+      background: #3ddc84;
+      opacity: .6;
+    }
+
+    .msg {
+      font-family: var(--mono);
+      font-size: 0.86rem;
+      margin-bottom: 14px;
+      opacity: 0;
+      animation: type-in 0.5s ease forwards;
+    }
+
+    .msg:nth-child(2) {
+      animation-delay: 0.3s;
+    }
+
+    .msg:nth-child(3) {
+      animation-delay: 1.0s;
+    }
+
+    .msg:nth-child(4) {
+      animation-delay: 1.7s;
+    }
+
+    .msg:nth-child(5) {
+      animation-delay: 2.4s;
+    }
+
+    .msg:nth-child(6) {
+      animation-delay: 3.1s;
+    }
+
+    @keyframes type-in {
+      from {
+        opacity: 0;
+        transform: translateY(4px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .msg .who {
+      color: var(--muted);
+    }
+
+    .msg.user .who {
+      color: var(--blue);
+    }
+
+    .msg.agent .who {
+      color: var(--cyan);
+    }
+
+    .msg .tool {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 0.76rem;
+      color: var(--muted);
+      border: 1px dashed var(--line);
+      border-radius: 6px;
+      padding: 3px 8px;
+    }
+
+    .score-panel {
+      padding: 22px 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 14px;
+    }
+
+    .score-label {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .score-track {
+      position: relative;
+      height: 10px;
+      border-radius: 6px;
+      background: var(--surface-2);
+      overflow: hidden;
+    }
+
+    .score-fill {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 8%;
+      border-radius: 6px;
+      background: linear-gradient(90deg, var(--cold), var(--warm) 60%, var(--hot));
+      animation: climb 3.6s ease forwards;
+    }
+
+    @keyframes climb {
+      0% {
+        width: 6%;
+      }
+
+      35% {
+        width: 6%;
+      }
+
+      55% {
+        width: 46%;
+      }
+
+      85% {
+        width: 46%;
+      }
+
+      100% {
+        width: 94%;
+      }
+    }
+
+    .score-state {
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+
+    .score-state .tag {
+      display: inline-block;
+      padding: 2px 9px;
+      border-radius: 100px;
+      font-size: 0.72rem;
+      margin-left: 8px;
+      vertical-align: 2px;
+    }
+
+    .tag.cold {
+      background: rgba(124, 139, 163, 0.18);
+      color: var(--cold);
+    }
+
+    .tag.warm {
+      background: rgba(245, 165, 36, 0.16);
+      color: var(--warm);
+    }
+
+    .tag.hot {
+      background: rgba(251, 77, 106, 0.16);
+      color: var(--hot);
+    }
+
+    .score-note {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .msg {
+        opacity: 1;
+        animation: none;
+      }
+
+      .score-fill {
+        animation: none;
+        width: 94%;
+      }
+
+      .slide.hero.active .wrap {
+        animation: none;
+      }
+    }
+
+    /* ---------- content slides ---------- */
+    h2.stitle {
+      font-family: var(--mono);
+      font-size: clamp(1.5rem, 3vw, 1.9rem);
+      margin: 10px 0 8px;
+    }
+
+    .slide>.wrap>p.dek {
+      color: var(--muted);
+      max-width: 62ch;
+      margin-bottom: 32px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 20px 22px;
+    }
+
+    .card h3 {
+      font-size: 1rem;
+      color: var(--cyan);
+      margin-bottom: 8px;
+      font-family: var(--mono);
+    }
+
+    .card p {
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    /* ---------- system architecture diagram (rendered via mermaid-cli) ---------- */
+    .wrap-wide {
+      max-width: 1180px;
+    }
+
+    .diagram-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 18px;
+      overflow-x: auto;
+      margin-bottom: 16px;
+    }
+
+    .arch-diagram {
+      display: block;
+      width: 100%;
+      min-width: 820px;
+      height: auto;
+    }
+
+    .legend {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      font-family: var(--mono);
+      font-size: 0.74rem;
+      color: var(--muted);
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .legend .dot {
+      width: 11px;
+      height: 11px;
+      flex-shrink: 0;
+    }
+
+    .legend .dot.agent {
+      border-radius: 50%;
+      background: rgba(34, 211, 238, 0.16);
+      border: 1.5px solid var(--cyan);
+    }
+
+    .legend .dot.endpoint {
+      border-radius: 3px;
+      background: var(--surface-2);
+      border: 1px solid #3b4f6b;
+    }
+
+    .legend .dot.external {
+      border-radius: 3px;
+      background: #101f36;
+      border: 1px dashed var(--blue);
+    }
+
+    /* ---------- agent tool cards ---------- */
+    .agentcard {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 20px 22px;
+    }
+
+    .agentcard h3 {
+      font-size: 0.98rem;
+      color: var(--cyan);
+      margin-bottom: 14px;
+      font-family: var(--mono);
+      font-weight: 700;
+    }
+
+    .agentcard h3 .sub {
+      color: var(--muted);
+      font-weight: 400;
+      font-size: 0.75rem;
+      margin-left: 8px;
+    }
+
+    .toollist {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .tool-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .tool-row .fn {
+      flex-shrink: 0;
+      font-family: var(--mono);
+      font-size: 0.74rem;
+      color: var(--ink);
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 3px 8px;
+    }
+
+    .tool-row .desc {
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .tool-row .desc code {
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 0.8rem;
+    }
+
+    .callout {
+      border-left: 3px solid var(--cyan);
+      background: var(--surface);
+      border-radius: 0 10px 10px 0;
+      padding: 16px 20px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .callout strong,
+    .callout code {
+      color: var(--ink);
+    }
+
+    .callout code {
+      font-family: var(--mono);
+      font-size: 0.85rem;
+    }
+
+    /* ---------- hot/warm/cold ladder ---------- */
+    .ladder {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin: 6px 0 28px;
+    }
+
+    .rung {
+      display: flex;
+      align-items: baseline;
+      gap: 18px;
+      padding: 16px 20px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      border-left-width: 3px;
+      background: var(--surface);
+    }
+
+    .rung .level {
+      font-family: var(--mono);
+      font-weight: 700;
+      min-width: 66px;
+      font-size: 0.95rem;
+    }
+
+    .rung .signals {
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .rung .signals code {
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 0.83rem;
+    }
+
+    .rung.hot {
+      border-left-color: var(--hot);
+    }
+
+    .rung.hot .level {
+      color: var(--hot);
+    }
+
+    .rung.warm {
+      border-left-color: var(--warm);
+    }
+
+    .rung.warm .level {
+      color: var(--warm);
+    }
+
+    .rung.cold {
+      border-left-color: var(--cold);
+    }
+
+    .rung.cold .level {
+      color: var(--cold);
+    }
+
+    /* ---------- stack manifest ---------- */
+    .manifest {
+      font-family: var(--mono);
+      font-size: 0.86rem;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .manifest .layer {
+      border-bottom: 1px solid var(--line);
+    }
+
+    .manifest .layer:last-child {
+      border-bottom: none;
+    }
+
+    .manifest .layer-head {
+      padding: 12px 20px;
+      background: var(--surface-2);
+      color: var(--cyan);
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .manifest .kv {
+      display: flex;
+      padding: 10px 20px;
+      gap: 14px;
+      border-top: 1px solid var(--line);
+    }
+
+    .manifest .kv .k {
+      color: var(--muted);
+      min-width: 150px;
+      flex-shrink: 0;
+    }
+
+    .manifest .kv .v {
+      color: var(--ink);
+    }
+
+    .manifest .kv.kv-highlight {
+      background: rgba(34, 211, 238, 0.07);
+      border-left: 2px solid var(--cyan);
+    }
+
+    .manifest .kv .v-muted {
+      color: var(--muted);
+    }
+
+    /* ---------- closing slide ---------- */
+    .slide.closing .wrap {
+      text-align: center;
+    }
+
+    .slide.closing p.dek {
+      max-width: none;
+      margin: 0 auto 8px;
+    }
+
+    /* ---------- fixed slide navigation ---------- */
+    .slidenav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      height: var(--navh);
+      padding: 0 20px;
+      background: linear-gradient(0deg, rgba(7, 15, 28, 0.97), rgba(7, 15, 28, 0.85) 75%, transparent);
+      z-index: 20;
+    }
+
+    .navbtn {
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      color: var(--ink);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 16px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: border-color .15s, background .15s;
+    }
+
+    .navbtn:hover:not(:disabled) {
+      border-color: var(--cyan);
+      background: var(--surface-2);
+    }
+
+    .navbtn:disabled {
+      opacity: 0.3;
+      cursor: default;
+    }
+
+    .dots {
+      display: flex;
+      gap: 8px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--line);
+      border: none;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    .dot.active {
+      background: var(--cyan);
+      width: 22px;
+      border-radius: 4px;
+    }
+
+    .slidecounter {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--muted);
+      min-width: 44px;
+      text-align: center;
+    }
+
+    @media (max-width: 720px) {
+      .demo {
+        grid-template-columns: 1fr;
+      }
+
+      .transcript {
+        border-right: none;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+
+      .wrap-wide {
+        max-width: 100%;
+      }
+
+      .manifest .kv {
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .manifest .kv .k {
+        min-width: 0;
+      }
+
+      .slidenav {
+        gap: 12px;
+      }
+
+      .navbtn span.label {
+        display: none;
+      }
+
+      .rung {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+      }
+    }
+
+    a:focus-visible,
+    button:focus-visible {
+      outline: 2px solid var(--cyan);
+      outline-offset: 3px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header class="slide hero">
+    <div class="wrap">
+      <div class="kicker">Proyecto Integrador · Diploma AI Engineer</div>
+      <h1 class="title">ask<span>-</span>dmc</h1>
+      <p class="lede">Un agente de ventas conversacional para DMC Institute: recomienda cursos por similitud semántica,
+        cualifica al prospecto en tiempo real y cierra el pago — sin que un lead se enfríe esperando a un asesor humano.
+      </p>
+
+      <div class="demo">
+        <div class="transcript">
+          <div class="win-dots"><span></span><span></span><span></span></div>
+          <div class="msg user"><span class="who">usuario ›</span> hola, busco algo de data science pero con poco tiempo
+            libre</div>
+          <div class="msg agent"><span class="who">agente ›</span> get_course_recommendations(budget, duration)<br><span
+              class="tool">pgvector · similarity search sobre el catálogo</span></div>
+          <div class="msg agent"><span class="who">agente ›</span> te recomiendo "Fundamentos de Data Science" (6
+            semanas) — encaja con tu presupuesto y tiempo</div>
+          <div class="msg user"><span class="who">usuario ›</span> me interesa, ¿cómo pago?</div>
+          <div class="msg agent"><span class="who">agente ›</span> create_payment_link()<br><span class="tool">Mercado
+              Pago Checkout Pro</span></div>
+          <div class="msg agent"><span class="who">agente ›</span> aquí tienes tu link de pago 👇</div>
+        </div>
+        <div class="score-panel">
+          <div class="score-label">lead score · en vivo</div>
+          <div class="score-track">
+            <div class="score-fill"></div>
+          </div>
+          <div class="score-state">Motivación de compra<span class="tag hot">HOT</span></div>
+          <p class="score-note">El score solo sube — nunca baja — a partir de señales independientes: volumen de
+            mensajes, intención de compra explícita y datos de perfil capturados.</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="slide" id="pertinencia">
+    <div class="wrap">
+      <span class="prompt">pertinencia_del_problema</span>
+      <h2 class="stitle">Un lead se enfría mientras nadie está mirando</h2>
+      <p class="dek">Un formulario o un FAQ estático no distingue a quien solo curiosea de quien ya está listo para
+        pagar.</p>
+      <div class="grid-2">
+        <div class="card">
+          <h3>El problema real</h3>
+          <p>Sin señal de intención en tiempo real, el seguimiento llega tarde o trata igual a un lead frío y a uno a
+            punto de pagar.</p>
+        </div>
+        <div class="card">
+          <h3>Por qué requiere IA</h3>
+          <p>Emparejar un curso con la necesidad real exige lenguaje natural y orquestar herramientas — no lo resuelve
+            un bot de respuestas fijas.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" id="diseno">
+    <div class="wrap wrap-wide">
+      <span class="prompt">diseño_de_la_solucion</span>
+      <h2 class="stitle">Dos superficies, un backend, dos agentes</h2>
+      <p class="dek">Chat y BackOffice nunca se hablan entre sí. Cada uno tiene su propio WebSocket y sus propios
+        endpoints, y dispara su propio agente de Azure AI Foundry — ambos comparten el mismo Postgres y el mismo Foundry
+        por debajo.</p>
+
+      <div class="diagram-card">
+        <img class="arch-diagram" src="arch-overview.svg"
+          alt="Diagrama: apps/chat con ChatAgentClient sobre /ws/chat a la izquierda; apps/backoffice con OutreachAgentService sobre /ws/leads a la derecha; Azure AI Foundry, Postgres+pgvector, Mercado Pago y Azure Communication Services como servicios externos compartidos abajo.">
+      </div>
+
+      <div class="legend">
+        <span class="legend-item"><i class="dot agent"></i>agente Foundry</span>
+        <span class="legend-item"><i class="dot endpoint"></i>endpoint WS / REST</span>
+        <span class="legend-item"><i class="dot external"></i>servicio externo</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" id="herramientas">
+    <div class="wrap">
+      <span class="prompt">herramientas_de_los_agentes</span>
+      <h2 class="stitle">Nada se inventa: todo pasa por una tool-call</h2>
+      <p class="dek">Dos agentes de Azure AI Foundry independientes, cada uno con las herramientas justas para su
+        trabajo.</p>
+
+      <div class="grid-2">
+        <div class="agentcard">
+          <h3>ChatAgentClient <span class="sub">/ws/chat</span></h3>
+          <div class="toollist">
+            <div class="tool-row"><span class="fn">collect_profile_data</span><span class="desc">abre el formulario del
+                widget → piso <strong style="color:var(--hot)">HOT</strong></span></div>
+            <div class="tool-row"><span class="fn">get_course_recommendations</span><span class="desc">busca cursos por
+                similitud semántica</span></div>
+            <div class="tool-row"><span class="fn">create_payment_link</span><span class="desc">genera el Checkout Pro
+                de Mercado Pago</span></div>
+            <div class="tool-row"><span class="fn">flag_purchase_intent</span><span class="desc">detecta intención de
+                compra explícita → piso <strong style="color:var(--warm)">WARM</strong></span></div>
+            <div class="tool-row"><span class="fn">set_lead_motivation</span><span class="desc">clasifica la motivación
+                tras el perfil</span></div>
+          </div>
+        </div>
+        <div class="agentcard">
+          <h3>OutreachAgentService <span class="sub">BackOffice</span></h3>
+          <div class="toollist">
+            <div class="tool-row"><span class="fn">get_course_details</span><span class="desc">consulta datos reales del
+                curso para el borrador</span></div>
+          </div>
+          <p class="score-note" style="margin-top:16px;">Redacta, nunca envía — <code>POST /drafts/{id}/send</code> es
+            el único camino que dispara el correo.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" id="schema">
+    <div class="wrap wrap-wide">
+      <span class="prompt">el_vector_no_es_el_pdf</span>
+      <h2 class="stitle">El vector es el registro del curso, no el brochure</h2>
+      <p class="dek"><code>embedding_text()</code> concatena nombre, categoría, descripción y temario — eso es lo que se
+        embebe. El PDF nunca se lee.</p>
+
+      <div class="manifest">
+        <div class="layer">
+          <div class="layer-head">courses — migrations/001_create_courses.sql</div>
+          <div class="kv"><span class="k">course_id</span><span class="v">TEXT · primary key</span></div>
+          <div class="kv"><span class="k">name</span><span class="v">TEXT</span></div>
+          <div class="kv"><span class="k">description</span><span class="v">TEXT</span></div>
+          <div class="kv"><span class="k">category</span><span class="v">TEXT</span></div>
+          <div class="kv"><span class="k">curriculum</span><span class="v">TEXT[]</span></div>
+          <div class="kv"><span class="k">price</span><span class="v">NUMERIC(10,2)</span></div>
+          <div class="kv"><span class="k">duration_weeks</span><span class="v">INTEGER</span></div>
+          <div class="kv kv-highlight"><span class="k">embedding</span><span class="v">vector(1536) <span
+                class="v-muted">· Azure OpenAI, índice HNSW + coseno</span></span></div>
+        </div>
+      </div>
+
+      <div class="callout"><code>embedding_text()</code> arma: <em>"{name}. {category}. {description}. Temas:
+          {curriculum}"</em> — se calcula una sola vez al sembrar el catálogo (<code>scripts/seed_catalog.py</code>),
+        nunca por request.</div>
+    </div>
+  </section>
+
+  <section class="slide" id="filters">
+    <div class="wrap wrap-wide">
+      <span class="prompt">filtros_del_flujo_de_recomendacion</span>
+      <h2 class="stitle">Exacto → relajado (con permiso) → catálogo completo</h2>
+      <p class="dek">Nunca se amplía un filtro sin avisar: si hace falta relajar presupuesto o duración, el agente pausa
+        y pregunta primero.</p>
+
+      <div class="diagram-card">
+        <img class="arch-diagram" src="filters-flow.svg"
+          alt="Diagrama de flujo: filtro exacto por presupuesto y duración con top-3 por similitud; si no hay candidatos, se relajan los criterios (presupuesto ×1.2, duración ×1.5) y se pausa para pedir confirmación al usuario antes de mostrar el resultado relajado; si tampoco hay candidatos relajados, o el usuario rechaza, se cae a catálogo completo sin filtros ordenado solo por similitud.">
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>Postgres hace el filtro, no el LLM</h3>
+          <p>Cada rama es la misma consulta SQL con distintos parámetros —
+            <code>WHERE price ≤ … AND duration_weeks ≤ …</code>, <code>ORDER BY embedding &lt;=&gt; query</code>. El
+            agente solo redacta sobre lo que ya volvió filtrado.</p>
+        </div>
+        <div class="card">
+          <h3>Tres resultados posibles</h3>
+          <p><code>EXACT_MATCH</code>, <code>RELAXED_MATCH</code> (solo si el usuario confirma) o
+            <code>FULL_CATALOG</code> — sin filtros, sin límite, ordenado solo por similitud.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" id="scoring">
+    <div class="wrap">
+      <span class="prompt">como_se_determina_hot_warm_o_cold</span>
+      <h2 class="stitle">El score solo sube, nunca baja</h2>
+      <p class="dek">Cada señal propone un "piso" para el lead; si supera su score actual, sube — si no, no pasa nada.
+      </p>
+
+      <div class="ladder">
+        <div class="rung hot">
+          <span class="level">HOT</span>
+          <span class="signals">10+ mensajes del usuario · o formulario de perfil completado</span>
+        </div>
+        <div class="rung warm">
+          <span class="level">WARM</span>
+          <span class="signals">5+ mensajes · o intención de compra explícita, incluso en el primer mensaje</span>
+        </div>
+        <div class="rung cold">
+          <span class="level">COLD</span>
+          <span class="signals">estado inicial — sin señales de compromiso todavía</span>
+        </div>
+      </div>
+
+      <div class="callout">Tres disparadores independientes, un mismo merge monotónico: <code>apply_score_floor()</code>
+        — puro, determinista, testeado con Hypothesis.</div>
+    </div>
+  </section>
+
+  <section class="slide" id="implementacion-backend">
+    <div class="wrap">
+      <span class="prompt">implementacion_tecnica</span>
+      <h2 class="stitle">Backend y datos</h2>
+      <p class="dek">FastAPI, un agente de Azure AI Foundry y Postgres con pgvector detrás del chat y los pagos.</p>
+
+      <div class="manifest">
+        <div class="layer">
+          <div class="layer-head">backend — services/agent-service</div>
+          <div class="kv"><span class="k">framework</span><span class="v">FastAPI · hexagonal (domain / ports /
+              adapters)</span></div>
+          <div class="kv"><span class="k">agente</span><span class="v">Azure AI Foundry, reconstruido por
+              conexión</span></div>
+          <div class="kv"><span class="k">transporte</span><span class="v">WebSocket — /ws/chat, /ws/leads
+              (push-only)</span></div>
+          <div class="kv"><span class="k">pagos</span><span class="v">Mercado Pago + verificación de firma del
+              webhook</span></div>
+        </div>
+        <div class="layer">
+          <div class="layer-head">datos — migrations/</div>
+          <div class="kv"><span class="k">motor</span><span class="v">Postgres 16 + extensión pgvector</span></div>
+          <div class="kv"><span class="k">tablas</span><span class="v">courses → leads/sessions → messages →
+              drafts</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" id="implementacion-frontend">
+    <div class="wrap">
+      <span class="prompt">implementacion_tecnica</span>
+      <h2 class="stitle">Frontend e infraestructura</h2>
+      <p class="dek">Dos Next.js independientes sobre un mismo patrón de transporte, y Terraform para lo que corre en
+        Azure.</p>
+
+      <div class="manifest">
+        <div class="layer">
+          <div class="layer-head">frontend — apps/chat, apps/backoffice</div>
+          <div class="kv"><span class="k">framework</span><span class="v">Next.js 15 · apps independientes (3000 /
+              3001)</span></div>
+          <div class="kv"><span class="k">transporte</span><span class="v">Effect Context.Tag + Ws*Service</span></div>
+          <div class="kv"><span class="k">tests</span><span class="v">vitest · pytest + Hypothesis (dominio, sin
+              BD)</span></div>
+        </div>
+        <div class="layer">
+          <div class="layer-head">infraestructura — infra/agent-service</div>
+          <div class="kv"><span class="k">iac</span><span class="v">Terraform — Container Apps, Postgres, Key
+              Vault</span></div>
+          <div class="kv"><span class="k">secretos</span><span class="v">env vars inyectadas desde Key Vault</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="slide closing">
+    <div class="wrap">
+      <span class="prompt">fin_de_la_transmisión</span>
+      <h2 class="stitle">ask-dmc</h2>
+      <p class="dek">Proyecto Integrador · Diploma AI Engineer · DMC Institute</p>
+    </div>
+  </footer>
+
+  <nav class="slidenav" aria-label="Navegación de diapositivas">
+    <button class="navbtn" id="prevBtn" type="button" aria-label="Diapositiva anterior">‹ <span
+        class="label">Atrás</span></button>
+    <div class="dots" id="slideDots"></div>
+    <span class="slidecounter" id="slideCounter"></span>
+    <button class="navbtn" id="nextBtn" type="button" aria-label="Siguiente diapositiva"><span
+        class="label">Siguiente</span> ›</button>
+  </nav>
+
+  <script>
+    (function () {
+      var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+      var dotsWrap = document.getElementById('slideDots');
+      var counter = document.getElementById('slideCounter');
+      var prevBtn = document.getElementById('prevBtn');
+      var nextBtn = document.getElementById('nextBtn');
+      var current = 0;
+
+      slides.forEach(function (_, i) {
+        var dot = document.createElement('button');
+        dot.type = 'button';
+        dot.className = 'dot';
+        dot.setAttribute('aria-label', 'Ir a la diapositiva ' + (i + 1));
+        dot.addEventListener('click', function () { goTo(i); });
+        dotsWrap.appendChild(dot);
+      });
+      var dots = Array.prototype.slice.call(dotsWrap.children);
+
+      function render() {
+        slides.forEach(function (s, i) { s.classList.toggle('active', i === current); });
+        dots.forEach(function (d, i) { d.classList.toggle('active', i === current); });
+        counter.textContent = (current + 1) + ' / ' + slides.length;
+        prevBtn.disabled = current === 0;
+        nextBtn.disabled = current === slides.length - 1;
+      }
+
+      function goTo(i) {
+        current = Math.max(0, Math.min(slides.length - 1, i));
+        render();
+      }
+
+      prevBtn.addEventListener('click', function () { goTo(current - 1); });
+      nextBtn.addEventListener('click', function () { goTo(current + 1); });
+
+      window.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowRight' || e.key === 'PageDown') { goTo(current + 1); }
+        if (e.key === 'ArrowLeft' || e.key === 'PageUp') { goTo(current - 1); }
+      });
+
+      render();
+    })();
+  </script>
+
+</body>
+
+</html>

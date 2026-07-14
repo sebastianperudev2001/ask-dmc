@@ -98,6 +98,8 @@ def test_collect_profile_data_pauses_and_resumes_on_submission():
                 "max_duration_weeks": 10,
                 "professional_background": "analista de datos",
                 "desired_stack": "azure",
+                "name": "Maria Lopez",
+                "email": "maria@example.com",
             }
         )
 

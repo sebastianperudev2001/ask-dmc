@@ -52,6 +52,8 @@ async def main():
             "max_duration_weeks": 10,
             "professional_background": "Analista de datos",
             "desired_stack": "Azure Data Engineering",
+            "name": "Debug User",
+            "email": "debug@example.com",
         }
         await ws.send(json.dumps(payload))
         print(f"[{time.monotonic()-start:.2f}s] Sent profile_data_submitted: {payload}")

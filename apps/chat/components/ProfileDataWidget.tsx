@@ -37,6 +37,10 @@ const ProfileDataWidget = ({ callId, prefill, onSubmit }: ProfileDataWidgetProps
   )
   const [professionalBackground, setProfessionalBackground] = useState(prefill.professionalBackground ?? '')
   const [desiredStack, setDesiredStack] = useState(prefill.desiredStack ?? '')
+  const [name, setName] = useState(prefill.name ?? '')
+  const [email, setEmail] = useState(prefill.email ?? '')
+
+  const isValidEmail = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())
 
   const isValid =
     budget.trim() !== '' &&
@@ -44,10 +48,12 @@ const ProfileDataWidget = ({ callId, prefill, onSubmit }: ProfileDataWidgetProps
     maxDurationWeeks.trim() !== '' &&
     Number(maxDurationWeeks) > 0 &&
     professionalBackground.trim() !== '' &&
-    desiredStack.trim() !== ''
+    desiredStack.trim() !== '' &&
+    name.trim() !== '' &&
+    isValidEmail
 
   const submit = () => {
-    console.log('[ProfileDataWidget] submit clicked', { isValid, callId, budget, maxDurationWeeks, professionalBackground, desiredStack })
+    console.log('[ProfileDataWidget] submit clicked', { isValid, callId, budget, maxDurationWeeks, professionalBackground, desiredStack, name, email })
     if (!isValid) {
       console.log('[ProfileDataWidget] BLOCKED — isValid is false')
       return
@@ -57,6 +63,8 @@ const ProfileDataWidget = ({ callId, prefill, onSubmit }: ProfileDataWidgetProps
       maxDurationWeeks: Number(maxDurationWeeks),
       professionalBackground: professionalBackground.trim(),
       desiredStack: desiredStack.trim(),
+      name: name.trim(),
+      email: email.trim(),
     })
   }
 
@@ -78,6 +86,30 @@ const ProfileDataWidget = ({ callId, prefill, onSubmit }: ProfileDataWidgetProps
     >
       <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)' }}>
         Confirma tus datos para buscar el programa ideal
+      </div>
+
+      <div style={fieldStyle}>
+        <label style={labelStyle} htmlFor={`name-${callId}`}>Nombre completo</label>
+        <input
+          id={`name-${callId}`}
+          data-testid="profile-data-widget-name-input"
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          style={inputStyle}
+        />
+      </div>
+
+      <div style={fieldStyle}>
+        <label style={labelStyle} htmlFor={`email-${callId}`}>Email</label>
+        <input
+          id={`email-${callId}`}
+          data-testid="profile-data-widget-email-input"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          style={inputStyle}
+        />
       </div>
 
       <div style={fieldStyle}>

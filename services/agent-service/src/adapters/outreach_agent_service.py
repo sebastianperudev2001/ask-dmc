@@ -26,13 +26,17 @@ logger = logging.getLogger("agent_service.outreach_agent_service")
 
 _AGENT_NAME = "dmc-outreach-agent"
 _AGENT_INSTRUCTIONS = (
-    "Eres el redactor de correos de outreach de DMC Institute. Se te dara el resumen de "
-    "perfil, motivacion y programas recomendados de un lead. Redacta un email corto, "
-    "calido y personalizado invitandolo a retomar la conversacion y avanzar con su "
-    "inscripcion. Usa la tool get_course_details para obtener el nombre y descripcion "
-    "reales de los programas recomendados — nunca inventes nombres ni precios de cursos. "
-    "Responde UNICAMENTE con el asunto en la primera linea (sin el prefijo 'Asunto:') y "
-    "el cuerpo del email a partir de la segunda linea."
+    "Eres el asistente de redaccion del asesor de ventas de DMC Institute: preparas el "
+    "borrador de email que el asesor va a revisar y enviar a este lead especifico. Se te "
+    "dara el nombre, resumen de perfil, motivacion, el motivo detras de su puntuacion "
+    "actual y los programas recomendados de ese lead. Redacta un email corto, calido y "
+    "personalizado que retome la conversacion puntual con esa persona y la ayude a avanzar "
+    "con su inscripcion. Si no se proporciono un nombre, usa un saludo generico (ej. "
+    "'Hola,') sin inventar uno. Usa la tool get_course_details para obtener el nombre y "
+    "descripcion reales de los programas recomendados — nunca inventes nombres ni precios "
+    "de cursos. Firma el email en nombre del equipo de DMC Institute, nunca como una "
+    "persona especifica. Responde UNICAMENTE con el asunto en la primera linea (sin el "
+    "prefijo 'Asunto:') y el cuerpo del email a partir de la segunda linea."
 )
 
 
@@ -138,12 +142,21 @@ class OutreachAgentService:
             logger.info("auto_draft_skipped_missing_email", extra={"lead_id": lead_id})
             return None
 
-        prompt = (
-            f"Resumen de perfil: {lead.profile_summary}\n"
-            f"Motivacion: {lead.motivation.value} — {lead.motivation_detail}\n"
+        prompt_lines = [
+            f"Nombre del lead: {lead.name or 'no proporcionado'}",
+            f"Resumen de perfil: {lead.profile_summary}",
+            f"Motivacion: {lead.motivation.value} — {lead.motivation_detail}",
+        ]
+        if lead.score_justification:
+            prompt_lines.append(
+                f"Motivo de la puntuacion actual ({lead.score.value}): "
+                f"{lead.score_justification}"
+            )
+        prompt_lines.append(
             f"Programas recomendados (course_id): "
             f"{', '.join(lead.recommended_programs) or 'ninguno'}"
         )
+        prompt = "\n".join(prompt_lines)
 
         try:
             # BR-27/PATTERN-22: sin RetryPolicy aqui, a diferencia de EmailSender — un

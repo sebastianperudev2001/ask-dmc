@@ -16,6 +16,7 @@ const iconPath = (name: string) => {
     case 'check':    return <path d="M5 12l4 4 10-10" />
     case 'brain':    return (<><path d="M9 4a3 3 0 0 0-3 3v1a3 3 0 0 0-2 5 3 3 0 0 0 2 5v1a3 3 0 0 0 6 0V4a3 3 0 0 0-3 0z" /><path d="M15 4a3 3 0 0 1 3 3v1a3 3 0 0 1 2 5 3 3 0 0 1-2 5v1a3 3 0 0 1-6 0" /></>)
     case 'tool':     return <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4l-6 6 2.4 2.4 6-6a4 4 0 0 0 5.4-5.4l-2.7 2.7-2-2 2.7-2.7z" />
+    case 'sidebar':  return (<><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" /></>)
     default:         return null
   }
 }

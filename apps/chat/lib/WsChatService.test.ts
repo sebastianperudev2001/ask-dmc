@@ -54,6 +54,8 @@ describe("toChatEvent (wire protocol translation, business-logic-model.md Sectio
           max_duration_weeks: 8,
           professional_background: "analista",
           desired_stack: "azure",
+          name: "Maria Lopez",
+          email: "maria@example.com",
         },
       })
     ).toEqual({
@@ -64,6 +66,8 @@ describe("toChatEvent (wire protocol translation, business-logic-model.md Sectio
         maxDurationWeeks: 8,
         professionalBackground: "analista",
         desiredStack: "azure",
+        name: "Maria Lopez",
+        email: "maria@example.com",
       },
     })
   })
