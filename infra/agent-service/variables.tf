@@ -43,3 +43,9 @@ variable "mercadopago_webhook_secret" {
   type        = string
   sensitive   = true
 }
+
+variable "acr_name" {
+  description = "Azure Container Registry name (globally unique, lowercase alphanumeric only)"
+  type        = string
+  default     = "acrdmcagentservice"
+}

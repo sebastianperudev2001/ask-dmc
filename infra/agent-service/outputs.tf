@@ -13,3 +13,7 @@ output "azure_openai_endpoint" {
 output "key_vault_uri" {
   value = azurerm_key_vault.main.vault_uri
 }
+
+output "acr_login_server" {
+  value = azurerm_container_registry.main.login_server
+}

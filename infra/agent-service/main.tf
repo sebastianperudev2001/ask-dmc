@@ -137,7 +137,7 @@ resource "azurerm_cognitive_deployment" "embedding" {
 resource "azurerm_email_communication_service" "main" {
   name                = "ecs-dmc-agent-service"
   resource_group_name = azurerm_resource_group.main.name
-  data_location        = "United States"
+  data_location       = "United States"
 }
 
 resource "azurerm_email_communication_service_domain" "managed" {
@@ -159,6 +159,16 @@ resource "azurerm_communication_service" "main" {
 
 # --- Compute ---
 
+# --- Container Registry (CI pushes here; Container App pulls via managed identity) ---
+
+resource "azurerm_container_registry" "main" {
+  name                = var.acr_name
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  sku                 = "Basic"
+  admin_enabled       = false # SECURITY-06: pull via managed identity, no static credentials
+}
+
 resource "azurerm_container_app_environment" "main" {
   name                       = "cae-dmc-agent-service"
   resource_group_name        = azurerm_resource_group.main.name
@@ -174,6 +184,11 @@ resource "azurerm_container_app" "agent_service" {
 
   identity {
     type = "SystemAssigned" # SECURITY-06: least-privilege identity, no static credentials
+  }
+
+  registry {
+    server   = azurerm_container_registry.main.login_server
+    identity = "System"
   }
 
   # Incremento 2 — secrets resueltos desde Key Vault (PATTERN-11), referenciados por
@@ -262,7 +277,7 @@ resource "azurerm_container_app" "agent_service" {
   ingress {
     external_enabled = true
     target_port      = 8000
-    transport         = "auto" # supports WebSocket upgrade
+    transport        = "auto" # supports WebSocket upgrade
     traffic_weight {
       percentage      = 100
       latest_revision = true
@@ -281,5 +296,11 @@ resource "azurerm_role_assignment" "container_app_to_openai" {
 resource "azurerm_role_assignment" "container_app_to_keyvault" {
   scope                = azurerm_key_vault.main.id
   role_definition_name = "Key Vault Secrets User"
+  principal_id         = azurerm_container_app.agent_service.identity[0].principal_id
+}
+
+resource "azurerm_role_assignment" "container_app_to_acr" {
+  scope                = azurerm_container_registry.main.id
+  role_definition_name = "AcrPull"
   principal_id         = azurerm_container_app.agent_service.identity[0].principal_id
 }
