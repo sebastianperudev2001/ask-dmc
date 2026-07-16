@@ -66,6 +66,17 @@ resource "azurerm_key_vault_secret" "acs_connection_string" {
   key_vault_id = azurerm_key_vault.main.id
 }
 
+# Incremento 4 — fix: DATABASE_URL previously never interpolated the admin password
+# (see main.tf history), so the container could not connect to Postgres. Built here from
+# the same FQDN/DB-name expressions the plain env var used, plus the password, and stored
+# as a Key Vault secret since it's a real credential (PATTERN-11, same as the two secrets
+# above).
+resource "azurerm_key_vault_secret" "database_url" {
+  name         = "database-url"
+  value        = "postgresql://agentservice_admin:${var.postgres_admin_password}@${azurerm_postgresql_flexible_server.main.fqdn}:5432/${azurerm_postgresql_flexible_server_database.agent_service.name}?sslmode=require"
+  key_vault_id = azurerm_key_vault.main.id
+}
+
 # --- Database (SECURITY-01: encryption at rest/in-transit by default) ---
 
 resource "azurerm_postgresql_flexible_server" "main" {
@@ -212,6 +223,12 @@ resource "azurerm_container_app" "agent_service" {
     identity            = "System"
   }
 
+  secret {
+    name                = "database-url"
+    key_vault_secret_id = azurerm_key_vault_secret.database_url.id
+    identity            = "System"
+  }
+
   template {
     min_replicas = 1 # PATTERN-04 — protects the <=3s first-delta NFR against cold start
     max_replicas = 1 # Incremento 3, PATTERN-25 — restricción DURA de correctitud, no solo
@@ -230,8 +247,8 @@ resource "azurerm_container_app" "agent_service" {
         value = "production"
       }
       env {
-        name  = "DATABASE_URL"
-        value = "postgresql://agentservice_admin@${azurerm_postgresql_flexible_server.main.fqdn}:5432/${azurerm_postgresql_flexible_server_database.agent_service.name}?sslmode=require"
+        name        = "DATABASE_URL"
+        secret_name = "database-url"
       }
       env {
         name  = "AZURE_OPENAI_ENDPOINT"
