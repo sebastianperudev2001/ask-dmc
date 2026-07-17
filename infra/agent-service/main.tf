@@ -90,8 +90,9 @@ resource "azurerm_postgresql_flexible_server" "main" {
   sku_name               = "B_Standard_B1ms" # Burstable B1ms — decisión NFR/Infra Design
   zone                   = "1"
 
-  # SECURITY-01
-  ssl_enforcement_enabled = true # TLS enforced by default on Flexible Server
+  # SECURITY-01: no configurable `ssl_enforcement_enabled` argument exists on this resource
+  # (that attribute belongs to the older, non-Flexible `azurerm_postgresql_server`) — Flexible
+  # Server enforces TLS in transit unconditionally, so there is nothing to set here.
 }
 
 resource "azurerm_postgresql_flexible_server_configuration" "pgvector" {
@@ -131,8 +132,8 @@ resource "azurerm_cognitive_deployment" "embedding" {
     name    = "text-embedding-3-small"
     version = "1"
   }
-  sku {
-    name     = "Standard"
+  scale {
+    type     = "Standard"
     capacity = 10
   }
 }

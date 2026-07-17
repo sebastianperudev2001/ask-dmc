@@ -32,6 +32,12 @@ services/ingestion/reports/
 .idea/
 .vscode/
 
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.backup
+crash.log
+
 # Next.js
 apps/chat/.next/
 apps/chat/node_modules/
