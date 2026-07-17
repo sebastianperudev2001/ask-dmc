@@ -300,6 +300,12 @@ resource "azurerm_container_app" "agent_service" {
       latest_revision = true
     }
   }
+
+  lifecycle {
+    ignore_changes = [template[0].container[0].image] # CI (GitHub Actions) updates the running
+    # image via `az containerapp update`; Terraform must not revert it to var.container_image
+    # on every apply — the deployed image tag is CI's responsibility, not Terraform's.
+  }
 }
 
 # --- Least-privilege role assignments (SECURITY-06) ---

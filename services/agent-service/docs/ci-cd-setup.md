@@ -6,6 +6,14 @@ before the workflow can run: Terraform can't provision this itself, since Terraf
 Azure auth to already exist (same chicken-and-egg reasoning as
 `provisioning-foundry-azd.md`).
 
+At the very first `terraform apply`, the ACR is brand new and empty, so there is no real
+`agent-service` image for it to pull yet — set `container_image` to a public placeholder
+(e.g. `mcr.microsoft.com/k8se/quickstart:latest`) for that initial apply. It's expected
+that the Container App's first revision will just be running this placeholder, not the
+real app; don't treat that as a failure. It becomes the actual `agent-service` image
+automatically once the first CI push (after completing this runbook's steps) builds and
+deploys it.
+
 Run these after `terraform apply` has created the resource group and Container Registry
 (so `az acr show` / `az containerapp show` below can resolve).
 
